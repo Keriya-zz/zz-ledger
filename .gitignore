@@ -1,0 +1,11 @@
+.qa/
+.desktop-venv/
+build/
+dist/
+__pycache__/
+*.spec
+*.exe
+账本*.json
+账本.json.tmp
+.紫记.lock
+导出/

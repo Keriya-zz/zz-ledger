@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#8b6cc9"><title>紫记 · 日常账本</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <a class="brand" href="./index.html"><span class="brand-icon">紫</span><span>紫记<small>把每一天，记清楚</small></span></a>
+      <div class="nav-caption">我的账本</div>
+      <nav><button class="nav-item active" data-view="home"><span>▦</span> 账本总览</button><button class="nav-item" data-view="accounts"><span>▤</span> 账户管理</button><button class="nav-item" data-view="stats"><span>▥</span> 开销统计</button></nav>
+      <div class="sidebar-bottom"><div class="local-dot">本地账本</div><p>认真记录，轻松生活。</p><button id="export-btn" class="quiet-btn">↓ 导出备份</button><button id="import-btn" class="quiet-btn">↑ 导入账本</button><input id="import-file" type="file" accept=".json,application/json" hidden></div>
+    </aside>
+    <main>
+      <header class="page-header"><div><div class="eyebrow" id="today-label"></div><h1 id="page-title">每一笔，都心中有数<span class="heading-dot">.</span></h1><p id="page-subtitle">从今天开始，慢慢养成记账的小习惯。</p></div><button class="primary-btn" id="add-entry">＋ 记一笔</button></header>
+      <section id="home-view">
+        <div class="overview-grid"><article class="total-card"><div class="card-eyebrow">我的总余额 <span>CNY</span></div><div class="total-number" id="total-balance"></div><div class="total-footer"><span id="account-count"></span><button id="manage-link">管理账户 ↗</button></div><div class="orb orb-one"></div><div class="orb orb-two"></div></article><article class="summary-card"><div class="summary-icon">↗</div><span>今日支出</span><strong id="today-expense"></strong><small id="today-count"></small></article><article class="summary-card"><div class="summary-icon income-icon">↙</div><span>本月支出</span><strong id="month-expense"></strong><small id="month-caption"></small></article></div>
+        <section class="accounts-section"><div class="section-heading"><h2>我的账户 <span id="home-account-count" class="count-pill"></span></h2><button class="text-btn" id="add-account">＋ 添加账户</button></div><div id="account-cards" class="account-grid"></div></section>
+        <section class="ledger-panel"><div class="section-heading ledger-heading"><div><h2>每日账单</h2><p>日子有迹可循，开销也一样。</p></div><div class="date-controls"><button id="prev-day" aria-label="前一天">‹</button><input type="date" id="selected-date" aria-label="账单日期" required><button id="next-day" aria-label="后一天">›</button><button id="go-today" class="today-btn">今天</button></div></div><div class="daily-strip"><span>当日支出 <b id="day-expense"></b></span><span>当日收入 <b id="day-income"></b></span><span id="day-count"></span></div><div class="filters"><label class="search-box"><span>⌕</span><input id="search" placeholder="搜索备注或分类" aria-label="搜索账单"></label><select id="filter-account" aria-label="筛选账户"></select><button id="csv-btn" class="text-btn">↓ 导出当日明细</button></div><div id="entry-list"></div></section>
+      </section>
+      <section id="accounts-view" hidden><div class="section-heading"><h2>账户与余额</h2><button class="primary-btn" id="accounts-add">＋ 添加账户</button></div><p class="section-description">设置当前可用余额；记录收支后，余额会自动更新。</p><div id="manage-cards" class="account-grid"></div></section>
+      <section id="stats-view" hidden><div class="section-heading"><h2>每月开销</h2><input type="month" id="stats-month" aria-label="统计月份"></div><div id="stats-summary" class="stats-summary"></div><div class="stats-grid"><article class="white-panel"><h2>每日支出</h2><div id="daily-chart" class="daily-chart"></div><div class="chart-labels"><span>月初</span><span>月末</span></div><p class="hint">悬停或点击柱形查看金额，点击可查看当天账单。</p></article><article class="white-panel"><h2>分类支出</h2><div id="category-chart"></div></article></div></section>
+      <footer>紫记 · 给生活留一本清楚的账<span>数据保存在当前浏览器，请定期导出备份</span></footer>
+    </main>
+  </div>
+  <dialog id="entry-dialog"><form id="entry-form"><div class="dialog-heading"><div><div class="eyebrow">一点一滴，都值得记录</div><h2 id="entry-title">记一笔</h2></div><button type="button" class="close-btn" data-close="entry-dialog" aria-label="关闭">×</button></div><div class="kind-toggle"><label><input type="radio" name="kind" value="expense" checked><span>支出</span></label><label><input type="radio" name="kind" value="income"><span>收入</span></label></div><label class="field amount-field">金额（元）<input id="entry-amount" inputmode="decimal" placeholder="0.00" required pattern="\d+(\.\d{1,2})?" maxlength="13"></label><div class="form-grid"><label class="field">付款 / 收款账户<select id="entry-account" required></select></label><label class="field">日期<input type="date" id="entry-date" required></label><label class="field">分类<select id="entry-category"></select></label><label class="field">备注<input id="entry-note" placeholder="例如：午餐、地铁" maxlength="200"></label></div><p class="hint">保存后会自动更新所选账户的余额。</p><p class="form-error" id="entry-error" role="alert"></p><button class="primary-btn full-width" type="submit">保存记录</button></form></dialog>
+  <dialog id="account-dialog"><form id="account-form"><div class="dialog-heading"><div><div class="eyebrow">把每一份余额安放好</div><h2 id="account-title">添加账户</h2></div><button type="button" class="close-btn" data-close="account-dialog" aria-label="关闭">×</button></div><label class="field">账户名称<input id="account-name" placeholder="例如：招商银行储蓄卡" maxlength="30" required></label><label class="field">账户类型<select id="account-type"><option>微信</option><option>支付宝</option><option>银行卡</option><option>现金</option><option>其他</option></select></label><label class="field">当前余额（元）<input id="account-balance" inputmode="decimal" placeholder="0.00" required maxlength="14"></label><p class="hint">编辑余额会直接校准当前余额，不计入每日收支。</p><p class="form-error" id="account-error" role="alert"></p><button type="submit" class="primary-btn full-width">保存账户</button></form></dialog>
+  <dialog id="confirm-dialog"><div class="dialog-heading"><h2 id="confirm-title"></h2><button class="close-btn" data-close="confirm-dialog" aria-label="关闭">×</button></div><p id="confirm-message" class="confirm-message"></p><div class="confirm-actions"><button class="secondary-btn" data-close="confirm-dialog">取消</button><button class="primary-btn" id="confirm-action">确定</button></div></dialog>
+  <div id="toast" class="toast" role="status" hidden></div>
+  <script src="core.js"></script><script src="app.js"></script>
+</body></html>
