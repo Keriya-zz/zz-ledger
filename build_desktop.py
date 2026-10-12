@@ -15,10 +15,11 @@ for y in (89, 125, 161):
     draw.ellipse((91, y-5, 101, y+5), fill="#b69ada")
     draw.rounded_rectangle((115, y-4, 170, y+4), radius=4, fill="#c8b0e5")
 image.save(root / "app.ico", sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
-command = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--onefile", "--windowed", "--name", "紫记", "--icon", str(root / "app.ico"), "--exclude-module", "tkinter"]
-for filename in ("index.html", "style.css", "app.js", "core.js", "app.ico"):
-    command.extend(["--add-data", f"{root / filename};."])
+command = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--onefile", "--windowed", "--name", "zz记", "--icon", str(root / "app.ico"), "--exclude-module", "tkinter"]
+for filename in ("index.html", "style.css", "app.js", "core.js"):
+    command.extend(["--add-data", f"{root / 'ui' / filename};ui"])
+command.extend(["--add-data", f"{root / 'app.ico'};."])
 command.append(str(root / "desktop.py"))
 subprocess.run(command, cwd=root, check=True)
-shutil.copy2(root / "dist" / "紫记.exe", root / "紫记.exe")
-print(f"完成：{root / '紫记.exe'}")
+shutil.copy2(root / "dist" / "zz记.exe", root / "zz记.exe")
+print(f"完成：{root / 'zz记.exe'}")

@@ -1,4 +1,4 @@
-"""紫记 Windows 桌面入口。账本始终保存在可执行文件所在目录。"""
+"""zz记 Windows 桌面入口。账本始终保存在可执行文件所在目录。"""
 from __future__ import annotations
 
 import argparse
@@ -98,7 +98,7 @@ def make_server(asset_dir, store):
             self.wfile.write(body)
 
         def authorized(self):
-            return secrets.compare_digest(self.headers.get("X-Ziji-Token", ""), token)
+            return secrets.compare_digest(self.headers.get("X-ZZ-Token", ""), token)
 
         def do_GET(self):
             parsed = urlsplit(self.path)
@@ -114,7 +114,7 @@ def make_server(asset_dir, store):
             if name not in ASSETS:
                 self.respond(404, {"error": "文件不存在"}); return
             if name == "index.html" and not secrets.compare_digest(parse_qs(parsed.query).get("token", [""])[0], token):
-                self.respond(403, {"error": "请从紫记软件打开账本"}); return
+                self.respond(403, {"error": "请从zz记软件打开账本"}); return
             try:
                 data = (asset_dir / name).read_bytes()
                 if name == "index.html":
@@ -155,11 +155,12 @@ def main():
     parser.add_argument("--smoke-test", action="store_true", help=argparse.SUPPRESS)
     args = parser.parse_args()
     executable_dir = Path(sys.executable).resolve().parent if getattr(sys, "frozen", False) else Path(__file__).resolve().parent
-    asset_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    resource_dir = Path(getattr(sys, "_MEIPASS", Path(__file__).resolve().parent))
+    asset_dir = resource_dir / "ui"
     data_dir = args.data_dir or executable_dir
     store = LedgerStore(data_dir)
     # 同一目录只允许一个软件实例，避免多个窗口互相覆盖账本。
-    lock_file = (store.directory / ".紫记.lock").open("a+b")
+    lock_file = (store.directory / ".zz记.lock").open("a+b")
     import msvcrt
     lock_file.seek(0)
     lock_file.write(b"0")
@@ -169,13 +170,13 @@ def main():
         msvcrt.locking(lock_file.fileno(), msvcrt.LK_NBLCK, 1)
     except OSError:
         import ctypes
-        ctypes.windll.user32.MessageBoxW(0, "此文件夹的紫记已在运行，请使用已打开的窗口。", "紫记", 0x40)
+        ctypes.windll.user32.MessageBoxW(0, "此文件夹的zz记已在运行，请使用已打开的窗口。", "zz记", 0x40)
         return
     server, url, _ = make_server(asset_dir, store)
     threading.Thread(target=server.serve_forever, daemon=True).start()
     try:
         import webview
-        window = webview.create_window("紫记 · 日常账本", url, width=1280, height=900, min_size=(800, 600), background_color="#f8f7fc", text_select=True)
+        window = webview.create_window("zz记 · 日常账本", url, width=1280, height=900, min_size=(800, 600), background_color="#f8f7fc", text_select=True)
         if args.smoke_test:
             def smoke():
                 try:
@@ -186,11 +187,11 @@ def main():
                 finally:
                     window.destroy()
             window.events.loaded += smoke
-        webview.start(gui="edgechromium", private_mode=True, icon=str(asset_dir / "app.ico") if (asset_dir / "app.ico").exists() else None)
+        webview.start(gui="edgechromium", private_mode=True, icon=str(resource_dir / "app.ico") if (resource_dir / "app.ico").exists() else None)
     except Exception as error:
         import ctypes
         (store.directory / "启动错误.txt").write_text(str(error), encoding="utf-8")
-        ctypes.windll.user32.MessageBoxW(0, f"启动失败：{error}\n请确认电脑已安装 Microsoft Edge WebView2 Runtime。", "紫记", 0x10)
+        ctypes.windll.user32.MessageBoxW(0, f"启动失败：{error}\n请确认电脑已安装 Microsoft Edge WebView2 Runtime。", "zz记", 0x10)
         raise
     finally:
         server.shutdown()

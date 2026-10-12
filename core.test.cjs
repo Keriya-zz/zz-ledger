@@ -1,5 +1,5 @@
 const assert = require('node:assert/strict');
-const L = require('./core.js');
+const L = require('./ui/core.js');
 let state = L.initial();
 const first = state.accounts[0].id;
 const second = state.accounts[1].id;

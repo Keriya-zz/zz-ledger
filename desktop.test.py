@@ -48,7 +48,7 @@ class DesktopTests(unittest.TestCase):
     def test_http_storage_and_access_control(self):
         with tempfile.TemporaryDirectory() as directory:
             store = LedgerStore(directory)
-            server, url, token = make_server(Path(__file__).parent, store)
+            server, url, token = make_server(Path(__file__).parent / "ui", store)
             thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
             base = url.split("/?")[0]
             try:
@@ -57,9 +57,9 @@ class DesktopTests(unittest.TestCase):
                 with self.assertRaises(HTTPError): urlopen(base + "/")
                 self.assertIn(b"window.desktopConfig", urlopen(url).read())
                 raw = json.dumps(sample())
-                request = Request(base+"/api/ledger", data=json.dumps({"value": raw}).encode(), headers={"X-Ziji-Token":token,"Content-Type":"application/json"})
+                request = Request(base+"/api/ledger", data=json.dumps({"value": raw}).encode(), headers={"X-ZZ-Token":token,"Content-Type":"application/json"})
                 self.assertEqual(urlopen(request).status,200)
-                request = Request(base+"/api/ledger",headers={"X-Ziji-Token":token})
+                request = Request(base+"/api/ledger",headers={"X-ZZ-Token":token})
                 self.assertEqual(json.loads(json.loads(urlopen(request).read())["value"]),sample())
             finally:
                 server.shutdown(); server.server_close(); thread.join()

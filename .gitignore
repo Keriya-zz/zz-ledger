@@ -8,4 +8,5 @@ __pycache__/
 账本*.json
 账本.json.tmp
 .紫记.lock
+.zz记.lock
 导出/

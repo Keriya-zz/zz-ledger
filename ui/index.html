@@ -2,13 +2,13 @@
 <html lang="zh-CN">
 <head>
   <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#8b6cc9"><title>紫记 · 日常账本</title>
+  <meta name="theme-color" content="#8b6cc9"><title>zz记 · 日常账本</title>
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
   <div class="app">
     <aside class="sidebar">
-      <a class="brand" href="./index.html"><span class="brand-icon">紫</span><span>紫记<small>把每一天，记清楚</small></span></a>
+      <div class="brand"><span class="brand-icon">zz</span><span>zz记<small>把每一天，记清楚</small></span></div>
       <div class="nav-caption">我的账本</div>
       <nav><button class="nav-item active" data-view="home"><span>▦</span> 账本总览</button><button class="nav-item" data-view="accounts"><span>▤</span> 账户管理</button><button class="nav-item" data-view="stats"><span>▥</span> 开销统计</button></nav>
       <div class="sidebar-bottom"><div class="local-dot">本地账本</div><p>认真记录，轻松生活。</p><button id="export-btn" class="quiet-btn">↓ 导出备份</button><button id="import-btn" class="quiet-btn">↑ 导入账本</button><input id="import-file" type="file" accept=".json,application/json" hidden></div>
@@ -22,7 +22,7 @@
       </section>
       <section id="accounts-view" hidden><div class="section-heading"><h2>账户与余额</h2><button class="primary-btn" id="accounts-add">＋ 添加账户</button></div><p class="section-description">设置当前可用余额；记录收支后，余额会自动更新。</p><div id="manage-cards" class="account-grid"></div></section>
       <section id="stats-view" hidden><div class="section-heading"><h2>每月开销</h2><input type="month" id="stats-month" aria-label="统计月份"></div><div id="stats-summary" class="stats-summary"></div><div class="stats-grid"><article class="white-panel"><h2>每日支出</h2><div id="daily-chart" class="daily-chart"></div><div class="chart-labels"><span>月初</span><span>月末</span></div><p class="hint">悬停或点击柱形查看金额，点击可查看当天账单。</p></article><article class="white-panel"><h2>分类支出</h2><div id="category-chart"></div></article></div></section>
-      <footer>紫记 · 给生活留一本清楚的账<span>数据保存在当前浏览器，请定期导出备份</span></footer>
+      <footer>zz记 · 给生活留一本清楚的账<span>账本保存在软件文件夹，请定期导出备份</span></footer>
     </main>
   </div>
   <dialog id="entry-dialog"><form id="entry-form"><div class="dialog-heading"><div><div class="eyebrow">一点一滴，都值得记录</div><h2 id="entry-title">记一笔</h2></div><button type="button" class="close-btn" data-close="entry-dialog" aria-label="关闭">×</button></div><div class="kind-toggle"><label><input type="radio" name="kind" value="expense" checked><span>支出</span></label><label><input type="radio" name="kind" value="income"><span>收入</span></label></div><label class="field amount-field">金额（元）<input id="entry-amount" inputmode="decimal" placeholder="0.00" required pattern="\d+(\.\d{1,2})?" maxlength="13"></label><div class="form-grid"><label class="field">付款 / 收款账户<select id="entry-account" required></select></label><label class="field">日期<input type="date" id="entry-date" required></label><label class="field">分类<select id="entry-category"></select></label><label class="field">备注<input id="entry-note" placeholder="例如：午餐、地铁" maxlength="200"></label></div><p class="hint">保存后会自动更新所选账户的余额。</p><p class="form-error" id="entry-error" role="alert"></p><button class="primary-btn full-width" type="submit">保存记录</button></form></dialog>

@@ -1,6 +1,9 @@
 'use strict';
 const $ = id => document.getElementById(id);
-const KEY = 'ziji-ledger-v1';
+if (!window.desktopConfig) {
+  document.body.innerHTML = '<main style="margin:40px;width:auto"><h1>zz记 · 日常账本</h1><p>请双击 zz记.exe 启动软件，此文件仅用于桌面软件的内部界面。</p></main>';
+  throw new Error('zz记仅支持桌面软件入口');
+}
 const escapeHtml = value => String(value).replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 const money = n => (n / 100).toLocaleString('zh-CN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 const localDate = (d = new Date()) => `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
@@ -8,21 +11,21 @@ const today = localDate();
 function desktopRequest(endpoint, payload) {
   const xhr = new XMLHttpRequest();
   xhr.open(payload === undefined ? 'GET' : 'POST', endpoint, false);
-  xhr.setRequestHeader('X-Ziji-Token', window.desktopConfig.token);
+  xhr.setRequestHeader('X-ZZ-Token', window.desktopConfig.token);
   if (payload !== undefined) xhr.setRequestHeader('Content-Type','application/json');
   xhr.send(payload === undefined ? null : JSON.stringify(payload));
   const result = JSON.parse(xhr.responseText);
   if (xhr.status !== 200) throw new Error(result.error || '账本文件读写失败');
   return result;
 }
-const storage = window.desktopConfig ? {
-  getItem: () => desktopRequest('/api/ledger').value,
-  setItem: (_, value) => desktopRequest('/api/ledger', {value})
-} : localStorage;
+const storage = {
+  read: () => desktopRequest('/api/ledger').value,
+  write: value => desktopRequest('/api/ledger', {value})
+};
 let state, editEntryId = null, editAccountId = null, confirmCallback = null, toastTimer;
 let storageBlocked = false;
 try {
-  const saved = storage.getItem(KEY);
+  const saved = storage.read();
   state = saved ? Ledger.validate(JSON.parse(saved)) : Ledger.initial();
 } catch (error) {
   storageBlocked = true;
@@ -35,8 +38,8 @@ function toast(message) {
 function commit(next) {
   Ledger.validate(next);
   if (storageBlocked) throw new Error('本地账本无法读取。请先导出备份，或导入有效账本后再保存。');
-  try { storage.setItem(KEY, JSON.stringify(next)); }
-  catch (error) { throw new Error(window.desktopConfig ? error.message : '保存失败：浏览器存储不可用或空间不足，请导出备份。'); }
+  try { storage.write(JSON.stringify(next)); }
+  catch (error) { throw new Error(error.message); }
   state = next; render();
 }
 function confirmAction(title, message, callback, label = '确定') {
@@ -186,19 +189,14 @@ $('search').oninput = renderDaily; $('filter-account').onchange = renderDaily;
 function moveDay(delta) { const date = new Date($('selected-date').value+'T12:00:00'); date.setDate(date.getDate()+delta); $('selected-date').value = localDate(date); renderDaily(); }
 $('prev-day').onclick = () => moveDay(-1); $('next-day').onclick = () => moveDay(1);
 $('go-today').onclick = () => { $('selected-date').value = today; renderDaily(); };
-function download(content, filename, type) {
-  if (window.desktopConfig) {
-    desktopRequest('/api/export', {content, filename});
-    return;
-  }
-  const url = URL.createObjectURL(new Blob([content],{type}));
-  const a = document.createElement('a'); a.href = url; a.download = filename; document.body.append(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(url),1000);
+function download(content, filename) {
+  desktopRequest('/api/export', {content, filename});
 }
 $('export-btn').onclick = () => {
   if (storageBlocked) {
-    try { const raw = storage.getItem(KEY); if (raw) { download(raw,`紫记-原始账本-${today}.json`,'application/json'); toast('已导出原始账本，请妥善保管'); return; } } catch(error) { toast(error.message); return; }
+    try { const raw = storage.read(); if (raw) { download(raw,`zz记-原始账本-${today}.json`,'application/json'); toast('已导出原始账本，请妥善保管'); return; } } catch(error) { toast(error.message); return; }
   }
-  try { download(JSON.stringify(state,null,2),`紫记-账本备份-${today}.json`,'application/json'); toast(window.desktopConfig ? '备份已保存到软件文件夹中的「导出」目录' : '已导出账本备份'); }
+  try { download(JSON.stringify(state,null,2),`zz记-账本备份-${today}.json`,'application/json'); toast('备份已保存到软件文件夹中的「导出」目录'); }
   catch(error) { toast(error.message); }
 };
 $('import-btn').onclick = () => $('import-file').click();
@@ -208,7 +206,7 @@ $('import-file').onchange = async event => {
     if (file.size > 10*1024*1024) throw new Error('备份文件过大，最大支持 10 MB');
     const next = Ledger.validate(JSON.parse(await file.text()));
     confirmAction('导入账本',`将用备份中的 ${next.accounts.length} 个账户、${next.entries.length} 笔记录替换当前账本。请先导出当前账本以备恢复。`,()=> {
-      storage.setItem(KEY,JSON.stringify(next)); state = next; storageBlocked = false; render(); toast('账本已导入');
+      storage.write(JSON.stringify(next)); state = next; storageBlocked = false; render(); toast('账本已导入');
     },'替换并导入');
   } catch(error) { toast(error instanceof SyntaxError ? '文件不是有效的 JSON 账本' : error.message); }
   event.target.value = '';
@@ -218,20 +216,20 @@ $('csv-btn').onclick = () => {
   if (!list.length) { toast('当前日期与筛选条件下没有可导出的记录'); return; }
   const cell = v => { const s = String(v); return '"' + (/^[=+\-@\t\r]/.test(s) ? "'"+s : s).replace(/"/g,'""') + '"'; };
   const rows = [['日期','类型','账户','分类','金额（元）','备注'],...list.map(e=>[e.date,e.kind === 'expense' ? '支出':'收入',state.accounts.find(a=>a.id === e.accountId).name,e.category,(e.amount/100).toFixed(2),e.note])];
-  try { download('\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n'),`紫记-每日明细-${$('selected-date').value}.csv`,'text/csv;charset=utf-8'); toast(window.desktopConfig ? '每日明细已保存到软件文件夹中的「导出」目录' : '已导出当前筛选下的每日明细'); }
+  try { download('\uFEFF'+rows.map(row=>row.map(cell).join(',')).join('\r\n'),`zz记-每日明细-${$('selected-date').value}.csv`,'text/csv;charset=utf-8'); toast('每日明细已保存到软件文件夹中的「导出」目录'); }
   catch(error) { toast(error.message); }
 };
 $('today-label').textContent = new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'long',day:'numeric',weekday:'long'});
 render();
-if (window.desktopConfig) {
+{
   document.querySelector('.local-dot').textContent = '桌面账本';
   const footer = document.querySelector('footer span');
   footer.textContent = '账本保存在软件文件夹的「账本.json」· 导出文件在「导出」目录';
   footer.title = window.desktopConfig.directory;
   // 首次运行即创建文件，之后每次保存都有原子替换与上一版备份。
   if (!storageBlocked) {
-    try { if (!storage.getItem(KEY)) storage.setItem(KEY,JSON.stringify(state)); }
+    try { if (!storage.read()) storage.write(JSON.stringify(state)); }
     catch(error) { storageBlocked = true; toast(error.message); }
   }
 }
-if (storageBlocked) confirmAction('本地账本读取失败',window.desktopConfig ? '已有文件没有被覆盖。请检查软件文件夹的读写权限；如账本损坏，请先导出原始文件，再导入「账本.上一版.json」或其他有效备份恢复。' : '已有数据没有被覆盖。请先导出原始账本备份，再导入有效备份恢复；如果浏览器禁止本地存储，请允许存储后重新打开。',()=>{},'我知道了');
+if (storageBlocked) confirmAction('本地账本读取失败','已有文件没有被覆盖。请检查软件文件夹的读写权限；如账本损坏，请先导出原始文件，再导入「账本.上一版.json」或其他有效备份恢复。',()=>{},'我知道了');
