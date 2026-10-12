@@ -16,9 +16,7 @@ for y in (89, 125, 161):
     draw.rounded_rectangle((115, y-4, 170, y+4), radius=4, fill="#c8b0e5")
 image.save(root / "app.ico", sizes=[(16,16),(32,32),(48,48),(64,64),(128,128),(256,256)])
 command = [sys.executable, "-m", "PyInstaller", "--noconfirm", "--onefile", "--windowed", "--name", "zz记", "--icon", str(root / "app.ico"), "--exclude-module", "tkinter"]
-for filename in ("index.html", "style.css", "app.js", "core.js"):
-    command.extend(["--add-data", f"{root / 'ui' / filename};ui"])
-command.extend(["--add-data", f"{root / 'app.ico'};."])
+command.extend(["--add-data", f"{root / 'ui'};ui", "--add-data", f"{root / 'app.ico'};."])
 command.append(str(root / "desktop.py"))
 subprocess.run(command, cwd=root, check=True)
 shutil.copy2(root / "dist" / "zz记.exe", root / "zz记.exe")

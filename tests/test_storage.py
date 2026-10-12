@@ -48,13 +48,15 @@ class DesktopTests(unittest.TestCase):
     def test_http_storage_and_access_control(self):
         with tempfile.TemporaryDirectory() as directory:
             store = LedgerStore(directory)
-            server, url, token = make_server(Path(__file__).parent / "ui", store)
+            server, url, token = make_server(Path(__file__).resolve().parent.parent / "ui", store)
             thread = threading.Thread(target=server.serve_forever, daemon=True); thread.start()
             base = url.split("/?")[0]
             try:
                 with self.assertRaises(HTTPError) as result: urlopen(base + "/api/ledger")
                 self.assertEqual(result.exception.code, 403)
-                with self.assertRaises(HTTPError): urlopen(base + "/")
+                result.exception.close()
+                with self.assertRaises(HTTPError) as denied: urlopen(base + "/")
+                denied.exception.close()
                 self.assertIn(b"window.desktopConfig", urlopen(url).read())
                 raw = json.dumps(sample())
                 request = Request(base+"/api/ledger", data=json.dumps({"value": raw}).encode(), headers={"X-ZZ-Token":token,"Content-Type":"application/json"})
@@ -66,3 +68,4 @@ class DesktopTests(unittest.TestCase):
 
 
 if __name__ == "__main__": unittest.main()
+

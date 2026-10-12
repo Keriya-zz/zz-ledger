@@ -2,6 +2,12 @@
 
 浅紫色风格的 Windows 本地记账软件，支持账户管理、每日收支记录和开销统计。
 
+![zz记界面预览](docs/preview.png)
+
+预览使用示例数据。
+
+界面采用暖白与柔和灰紫的编辑式设计，统一金额排版、导航、卡片与表单规范，详见[视觉设计规范](docs/design-system.md)。
+
 ## Windows 软件
 
 双击项目文件夹中的 **zz记.exe**，打开软件。使用打包后的软件不需要安装 Python 或 Node.js。界面使用 Microsoft Edge WebView2 运行；如其他电脑缺少运行时，可从[微软官网](https://developer.microsoft.com/microsoft-edge/webview2/)下载并安装。
@@ -33,6 +39,10 @@ python -m venv .desktop-venv
 - 按日期查看每日收支，支持账户筛选、备注搜索、每日 CSV 明细导出。
 - 「开销统计」显示每月收支、每日支出和分类占比，点击每日柱形可查看当天账单。
 - 「导出备份」保存完整 JSON 账本，「导入账本」校验后替换当前数据。
+- 「待还款」记录信用卡、花呗、借款等明细，显示待还总额、剩余金额、还款对象、日期和逾期状态；支持搜索、筛选与部分还款。
+- 添加待还款不会扣减余额。记录实际还款时选择付款账户，自动生成「还款」支出。编辑或撤销这笔账单时，余额和待还金额同步恢复；已还清明细可在筛选中查看。
+
+![待还款明细预览（示例数据）](docs/debts-preview.png)
 
 数据保存在软件所在文件夹，不连接微信、支付宝或银行，余额需要手动设置。请定期导出备份。编辑账户余额会直接校准余额，不生成收支记录。程序允许负余额并在支出后提示，以便补记历史支出。
 
@@ -42,20 +52,26 @@ python -m venv .desktop-venv
 
 ```sh
 node core.test.cjs
+node tests/debts.test.cjs
 ```
 
 安装 Python 后，可验证文件保存、备份和本地接口：
 
 ```powershell
-python desktop.test.py
+python -m unittest discover -s tests
 ```
 
 ## 项目结构
 
-- `desktop.py`：Windows 软件入口和账本文件保存。
+- `desktop.py`：Windows 软件启动入口。
+- `zzledger/`：领域校验、文件保存、本机接口、窗口控制与生命周期。
 - `build_desktop.py`：生成 `zz记.exe`。
-- `ui/`：软件内嵌界面资源，由软件加载，不提供独立网页版入口。
-- `core.test.cjs`、`desktop.test.py`：记账与文件保存测试。
+- `ui/`：内嵌界面；`core.js` 处理记账计算，`api.js` 处理异步请求，`app.js` 处理页面交互，`styles/` 分层管理样式。
+- `core.test.cjs`、`tests/`：记账、文件保存和窗口控制测试。
+
+窗口使用浅紫色自定义标题栏，支持拖动、双击最大化、最小化和关闭。保存期间显示状态并防止重复提交，写入成功后更新余额。
+
+详细的模块职责与技术流程见[架构说明](docs/architecture.md)。
 
 从源码启动需要先安装桌面依赖，然后运行：
 
