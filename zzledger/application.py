@@ -39,23 +39,33 @@ def main():
     try:
         import webview
         controls = WindowControls()
-        window = webview.create_window("zz记 · 日常账本", url, width=1320, height=920, min_size=(860, 640), background_color="#f7f5fc", text_select=True, frameless=True, easy_drag=False, shadow=True, js_api=controls)
+        window = webview.create_window("zz记 · 日常账本", url, width=1320, height=920, min_size=(860, 640), background_color="#FAF8F5", text_select=True, frameless=True, easy_drag=False, shadow=True, js_api=controls)
         controls.bind(window)
         if args.smoke_test:
             def smoke():
                 try:
+                    if not controls._native_ready.wait(10):
+                        raise RuntimeError('原生窗口配置超时')
                     completed = threading.Event()
                     received = []
                     def on_result(result):
                         received.append(result)
                         completed.set()
-                    window.evaluate_js("window.zzApp.ready.then(() => ({title:document.title,accounts:window.zzApp.snapshot().accounts.length,desktop:!!window.desktopConfig,total:document.getElementById('total-balance').textContent,titlebar:!!document.getElementById('window-close'),titlebarColor:getComputedStyle(document.querySelector('.window-titlebar')).backgroundColor,overflow:document.documentElement.scrollWidth > innerWidth}))", callback=on_result)
+                    window.evaluate_js("window.zzApp.ready.then(() => ({title:document.title,accounts:window.zzApp.snapshot().accounts.length,desktop:!!window.desktopConfig,nativeResizeBridge:typeof window.pywebview?.api?.start_resize==='function',resizeGrips:document.querySelectorAll('.window-resize-grip').length,total:document.getElementById('total-balance').textContent,titlebar:!!document.getElementById('window-close'),titlebarColor:getComputedStyle(document.querySelector('.window-titlebar')).backgroundColor,overflow:document.documentElement.scrollWidth > innerWidth}))", callback=on_result)
                     if not completed.wait(15):
                         raise RuntimeError('异步界面初始化超时')
                     details = received[0]
+                    if not details['nativeResizeBridge'] or details['resizeGrips'] != 8:
+                        raise RuntimeError('鼠标缩放桥接未连接')
                     details["frameless"] = window.frameless
                     details["native_border"] = str(window.native.FormBorderStyle)
+                    details.update(controls._native.verify())
                     controls.toggle_maximize()
+                    maximized = controls._native.client_bounds()
+                    work = controls._native.monitor_info().rcWork
+                    if maximized != (work.left, work.top, work.right, work.bottom):
+                        raise RuntimeError(f'最大化内容区超出屏幕可用区域: {maximized}')
+                    details["maximized_work_area"] = "passed"
                     controls.toggle_maximize()
                     controls.minimize()
                     window.restore()

@@ -1,4 +1,14 @@
 /* Native-sized desktop shell with a fixed titlebar and independently scrolling content. */
+.window-resize-grip { position: fixed; z-index: 1000; touch-action: none; }
+.resize-left, .resize-right { top: 8px; bottom: 8px; width: 6px; cursor: ew-resize; }
+.resize-left { left: 0; } .resize-right { right: 0; }
+.resize-top, .resize-bottom { left: 8px; right: 8px; height: 6px; cursor: ns-resize; }
+.resize-top { top: 0; } .resize-bottom { bottom: 0; }
+.resize-top-left, .resize-top-right, .resize-bottom-left, .resize-bottom-right { width: 8px; height: 8px; }
+.resize-top-left { top: 0; left: 0; cursor: nwse-resize; }
+.resize-top-right { top: 0; right: 0; cursor: nesw-resize; }
+.resize-bottom-left { bottom: 0; left: 0; cursor: nesw-resize; }
+.resize-bottom-right { bottom: 0; right: 0; cursor: nwse-resize; }
 .window-titlebar { display: flex; align-items: center; height: var(--title-height); background: var(--surface); border-bottom: 1px solid var(--border); user-select: none; }
 .title-identity { display: flex; align-items: center; gap: 9px; width: var(--sidebar-width); padding-left: 24px; color: var(--text-secondary); font-size: 11px; white-space: nowrap; }
 .title-logo { color: var(--purple-dark); font: italic 600 16px var(--font-editorial); letter-spacing: -1px; }

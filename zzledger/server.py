@@ -8,7 +8,7 @@ from .storage import MAX_BYTES
 
 def make_server(asset_dir, store):
     token = secrets.token_urlsafe(32)
-    assets = {p.relative_to(asset_dir).as_posix() for p in asset_dir.rglob("*") if p.is_file() and p.suffix in (".html", ".js", ".css", ".svg")}
+    assets = {p.relative_to(asset_dir).as_posix() for p in asset_dir.rglob("*") if p.is_file() and p.suffix in (".html", ".js", ".css", ".svg", ".png")}
 
     class Handler(BaseHTTPRequestHandler):
         def log_message(self, *_):

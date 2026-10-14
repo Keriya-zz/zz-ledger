@@ -1,24 +1,29 @@
 /* zz记 design tokens: color, typography, spacing and interaction. */
 :root {
   color-scheme: light;
-  --bg: #F8F7FA;
-  --surface: #FFFFFF;
-  --surface-secondary: #F1EDF5;
-  --purple: #8C75A8;
-  --purple-dark: #66517F;
-  --ink: #27232E;
-  --text: #514B59;
-  --muted: #918A9A;
-  --text-secondary: #756D7E;
-  --border: #E9E5ED;
-  --light: #F1EDF5;
+  --bg: #FAF8F5;
+  --surface: #FFFEFC;
+  --surface-secondary: #F0EBF3;
+  --purple: #927AA5;
+  --purple-dark: #50355E;
+  --ink: #2C1D38;
+  --text: #5D5265;
+  --muted: #978A9F;
+  --text-secondary: #776981;
+  --border: #E3DCE7;
+  --light: #F0EBF3;
   --danger: #A15A6B;
   --success: #5E806D;
   --font-body: 'Noto Sans SC', 'Source Han Sans SC', 'Segoe UI', 'Microsoft YaHei', sans-serif;
-  --font-number: 'Segoe UI', 'Inter', 'Noto Sans SC', sans-serif;
+  --font-number: Georgia, 'Times New Roman', 'Noto Serif SC', serif;
   --font-editorial: Georgia, 'Times New Roman', serif;
+  --font-title: 'Noto Serif SC', 'Source Han Serif SC', 'Songti SC', 'SimSun', serif;
+  --sidebar-bg: #302139;
+  --sidebar-text: #EBE3F1;
+  --sidebar-muted: #B9A9C6;
   --radius: 12px;
-  --radius-sm: 8px;
+  --radius-sm: 5px;
+  --radius-button: 4px;
   --title-height: 44px;
   --sidebar-width: 220px;
   --space-1: 4px;
@@ -31,8 +36,8 @@
   --space-8: 32px;
   --space-9: 36px;
   --space-10: 40px;
-  --focus-ring: 0 0 0 3px #8C75A820;
-  --shadow-dialog: 0 16px 48px #27232E18;
+  --focus-ring: 0 0 0 3px #927AA520;
+  --shadow-dialog: 0 16px 48px #2C1D3818;
   --duration: 180ms;
 }
 * { box-sizing: border-box; }

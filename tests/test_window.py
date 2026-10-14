@@ -11,7 +11,7 @@ class Event:
 
 class FakeWindow:
     def __init__(self):
-        self.events = type('Events', (), {'maximized': Event(), 'restored': Event()})()
+        self.events = type('Events', (), {'maximized': Event(), 'restored': Event(), 'before_show': Event(), 'shown': Event()})()
         self.actions = []
     def maximize(self): self.actions.append('maximize'); self.events.maximized.emit()
     def restore(self): self.actions.append('restore'); self.events.restored.emit()

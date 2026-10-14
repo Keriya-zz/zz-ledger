@@ -34,3 +34,16 @@ document.getElementById('window-minimize').onclick = () => nativeControl('minimi
 document.getElementById('window-maximize').onclick = () => nativeControl('toggle_maximize');
 document.getElementById('window-close').onclick = () => nativeControl('close');
 document.getElementById('title-drag').ondblclick = () => nativeControl('toggle_maximize');
+
+// WebView2 child surfaces consume mouse messages: route thin edge grips to Windows.
+for (const direction of ['left','right','top','bottom','top-left','top-right','bottom-left','bottom-right']) {
+  const grip = document.createElement('div');
+  grip.className = 'window-resize-grip resize-' + direction;
+  grip.setAttribute('aria-hidden', 'true');
+  grip.addEventListener('pointerdown', event => {
+    if (event.button !== 0 || !window.pywebview?.api) return;
+    event.preventDefault();
+    window.pywebview.api.start_resize(direction);
+  });
+  document.body.append(grip);
+}

@@ -4,6 +4,13 @@
   else root.Ledger = api;
 })(typeof globalThis !== 'undefined' ? globalThis : this, function () {
   const categories = ['餐饮', '交通', '购物', '生活', '娱乐', '医疗', '还款', '其他'];
+  function validCategory(value) {
+    return typeof value === 'string' && value.trim() === value && value.length > 0 &&
+      Array.from(value).length <= 20 && !/[\u0000-\u001F\u007F]/.test(value);
+  }
+  function categoryOptions(data) {
+    return [...new Set([...categories, ...(data.customCategories || []), ...data.entries.map(e => e.category)])];
+  }
   const id = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
   function cents(value) {
     const s = String(value).trim();
@@ -28,6 +35,10 @@
   function validate(data) {
     if (!data || data.version !== 1 || !Array.isArray(data.accounts) || !Array.isArray(data.entries)) throw new Error('账本格式不正确');
     const ids = new Set();
+    if (data.customCategories !== undefined && (!Array.isArray(data.customCategories) ||
+        data.customCategories.some(c => !validCategory(c)) || new Set(data.customCategories).size !== data.customCategories.length)) {
+      throw new Error('自定义分类数据无效');
+    }
     for (const a of data.accounts) {
       if (!a || typeof a.id !== 'string' || !a.id || ids.has(a.id) || typeof a.name !== 'string' || !a.name.trim() || a.name.length > 30 || !['微信','支付宝','银行卡','现金','其他'].includes(a.type) || !Number.isSafeInteger(a.balance) || Math.abs(a.balance) > 999999999999) throw new Error('账户数据无效');
       ids.add(a.id);
@@ -41,7 +52,7 @@
     }
     const entryIds = new Set();
     for (const e of data.entries) {
-      if (!e || typeof e.id !== 'string' || !e.id || entryIds.has(e.id) || !ids.has(e.accountId) || !['expense','income'].includes(e.kind) || !Number.isSafeInteger(e.amount) || e.amount <= 0 || e.amount > 999999999999 || !validDate(e.date) || !categories.includes(e.category) || typeof e.note !== 'string' || e.note.length > 200) throw new Error('收支记录无效');
+      if (!e || typeof e.id !== 'string' || !e.id || entryIds.has(e.id) || !ids.has(e.accountId) || !['expense','income'].includes(e.kind) || !Number.isSafeInteger(e.amount) || e.amount <= 0 || e.amount > 999999999999 || !validDate(e.date) || !validCategory(e.category) || typeof e.note !== 'string' || e.note.length > 200) throw new Error('收支记录无效');
       entryIds.add(e.id);
       if (e.debtId !== undefined && (!debtIds.has(e.debtId) || e.kind !== 'expense' || e.category !== '还款')) throw new Error('还款记录关联无效');
     }
@@ -49,7 +60,12 @@
     return data;
   }
   function saveEntry(data, input, editId) {
+    if (typeof input.category !== 'string' || !validCategory(input.category.trim())) throw new Error('请输入分类名称，最多 20 个字符');
     const next = JSON.parse(JSON.stringify(data));
+    const category = input.category.trim();
+    if (!categories.includes(category)) {
+      next.customCategories = [...new Set([...(next.customCategories || []), category])];
+    }
     let old;
     if (editId) {
       old = next.entries.find(e => e.id === editId);
@@ -57,7 +73,7 @@
       next.accounts.find(a => a.id === old.accountId).balance -= old.kind === 'expense' ? -old.amount : old.amount;
       next.entries = next.entries.filter(e => e.id !== editId);
     }
-    const entry = { id: editId || id(), ...input };
+    const entry = { id: editId || id(), ...input, category };
     if (old?.debtId !== undefined) entry.debtId = old.debtId;
     const account = next.accounts.find(a => a.id === entry.accountId);
     if (!account) throw new Error('请选择有效账户');
@@ -76,6 +92,17 @@
   function totals(data, date) {
     const list = data.entries.filter(e => e.date === date);
     return { expense: list.filter(e => e.kind === 'expense').reduce((n,e) => n + e.amount, 0), income: list.filter(e => e.kind === 'income').reduce((n,e) => n + e.amount, 0), count: list.length };
+  }
+  function accountExpenses(data, month) {
+    const rows = data.accounts.map(a => ({id:a.id, name:a.name, type:a.type, amount:0, count:0}));
+    const byId = new Map(rows.map(row => [row.id, row]));
+    for (const entry of data.entries) {
+      if (entry.kind !== 'expense' || entry.date.slice(0, 7) !== month) continue;
+      const row = byId.get(entry.accountId);
+      if (row) { row.amount += entry.amount; row.count += 1; }
+    }
+    const total = rows.reduce((sum, row) => sum + row.amount, 0);
+    return rows.sort((a,b) => b.amount - a.amount).map(row => ({...row, share:total ? row.amount / total * 100 : 0}));
   }
   function paid(data, debtId) {
     return data.entries.filter(e => e.debtId === debtId).reduce((n,e) => n + e.amount, 0);
@@ -107,5 +134,5 @@
     if (input.amount > d.remaining) throw new Error('还款金额不能超过剩余待还金额');
     return saveEntry(data,{...input,kind:'expense',category:'还款',debtId,note:input.note || '还款 · '+d.name});
   }
-  return { categories, id, cents, initial, validate, saveEntry, removeEntry, totals, validDate, paid, debtDetails, saveDebt, removeDebt, repayDebt };
+  return { accountExpenses, categories, categoryOptions, id, cents, initial, validate, saveEntry, removeEntry, totals, validDate, paid, debtDetails, saveDebt, removeDebt, repayDebt };
 });

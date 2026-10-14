@@ -64,7 +64,8 @@ function accountCards(management) {
   if (!state.accounts.length) return '<div class="empty-state"><div class="empty-symbol">◇</div><p>还没有账户，添加一个开始记账吧。</p><button class="text-btn" data-new-account>＋ 添加账户</button></div>';
   return state.accounts.map(a => {
     const [symbol, color] = icons[a.type];
-    return `<article class="account-card"><div class="account-top"><span class="account-icon ${color}">${Icons.account(a.type)}</span><div class="account-info"><h3>${escapeHtml(a.name)}</h3><small>${a.type} · 可用余额</small></div>${management ? '' : `<button class="account-edit" data-edit-account="${escapeHtml(a.id)}">编辑</button>`}</div><div class="account-value ${a.balance < 0 ? 'negative':''}"><small>¥</small>${money(a.balance)}</div>${management ? `<div class="account-actions"><button class="text-btn" data-edit-account="${escapeHtml(a.id)}">编辑账户</button><button class="danger-btn" data-delete-account="${escapeHtml(a.id)}">删除</button></div>` : ''}</article>`;
+    if (!management) return `<article class="account-row"><div class="account-row-name"><span class="account-icon ${color}">${Icons.account(a.type)}</span><h3>${escapeHtml(a.name)}</h3></div><span class="account-row-type">${escapeHtml(a.type)} · 可用余额</span><span class="account-row-value ${a.balance < 0 ? 'negative' : ''}"><small>¥</small>${money(a.balance)}</span><button class="account-row-edit" data-edit-account="${escapeHtml(a.id)}" aria-label="编辑${escapeHtml(a.name)}账户" title="编辑账户">›</button></article>`;
+    return `<article class="account-card"><div class="account-top"><span class="account-icon ${color}">${Icons.account(a.type)}</span><div class="account-info"><h3>${escapeHtml(a.name)}</h3><small>${a.type} · 可用余额</small></div>${management ? '' : `<button class="account-edit" data-edit-account="${escapeHtml(a.id)}">编辑</button>`}</div><div class="account-value ${a.balance < 0 ? 'negative':''}"><small>¥</small>${money(a.balance)}</div>${management ? `<div class="account-actions"><button class="text-btn" data-account-history="${escapeHtml(a.id)}" data-history-all>交易明细</button><button class="text-btn" data-edit-account="${escapeHtml(a.id)}">编辑账户</button><button class="danger-btn" data-delete-account="${escapeHtml(a.id)}">删除</button></div>` : ''}</article>`;
   }).join('');
 }
 function options(selected, all) {
@@ -82,9 +83,34 @@ function renderDaily() {
   const list = selectedEntries();
   $('entry-list').innerHTML = list.length ? list.map(e => {
     const a = state.accounts.find(a => a.id === e.accountId);
-    return `<div class="entry-row"><span class="entry-icon">${e.kind === 'income' ? Icons.draw('arrow') : Icons.category(e.category)}</span><div class="entry-content"><strong>${escapeHtml(e.note || (e.kind === 'income' ? '收入' : e.category))}</strong><small>${escapeHtml(a.name)} · ${e.category} · ${e.kind === 'income' ? '收入':'支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income':''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span><div class="entry-actions"><button data-edit-entry="${escapeHtml(e.id)}">编辑</button><button class="danger-btn" data-delete-entry="${escapeHtml(e.id)}">删除</button></div></div>`;
+    return `<div class="entry-row"><span class="entry-icon">${e.kind === 'income' ? Icons.draw('arrow') : Icons.category(e.category)}</span><div class="entry-content"><strong>${escapeHtml(e.note || (e.kind === 'income' ? '收入' : e.category))}</strong><small>${escapeHtml(a.name)} · ${escapeHtml(e.category)} · ${e.kind === 'income' ? '收入':'支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income':''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span><div class="entry-actions"><button data-edit-entry="${escapeHtml(e.id)}">编辑</button><button class="danger-btn" data-delete-entry="${escapeHtml(e.id)}">删除</button></div></div>`;
   }).join('') : `<div class="empty-state"><div class="empty-symbol"><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="21" y="12" width="43" height="56" rx="9"/><path d="M28 12v56M37 29h17M37 40h17M37 51h11"/><path class="spark" d="m12 28 3-7 3 7 7 3-7 3-3 7-3-7-7-3Z"/></svg></div><h2>${sum.count ? '没有匹配的记录' : '这一天，还没有记账'}</h2><p>${sum.count ? '试试其他关键词或账户。' : '一顿午餐，一次出行，记录生活里的小小开销。'}</p><button class="text-btn" data-new-entry>＋ 记下第一笔</button></div>`;
 }
+let historyAccountId = null;
+function renderAccountHistory() {
+  const account = state.accounts.find(a => a.id === historyAccountId);
+  if (!account) return;
+  const month = $('account-history-month').value;
+  const kind = $('account-history-kind').value;
+  const list = state.entries.filter(e => e.accountId === account.id && e.date.slice(0,7) === month && (kind === 'all' || e.kind === kind)).sort((a,b) => b.date.localeCompare(a.date));
+  $('account-history-title').textContent = account.name + ' · 交易明细';
+  const expense = list.filter(e=>e.kind === 'expense').reduce((sum,e)=>sum+e.amount,0);
+  const income = list.filter(e=>e.kind === 'income').reduce((sum,e)=>sum+e.amount,0);
+  $('account-history-summary').textContent = `${month} · ${list.length} 笔 · 支出 ¥ ${money(expense)} · 收入 ¥ ${money(income)}`;
+  $('account-history-list').innerHTML = list.length ? list.map(e=>`<div class="entry-row"><div class="entry-content"><strong>${escapeHtml(e.note || e.category)}</strong><small>${escapeHtml(e.date)} · ${escapeHtml(e.category)} · ${e.kind === 'income' ? '收入' : '支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income' : ''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span></div>`).join('') : '<div class="empty-state"><p>该账户在所选月份没有符合条件的交易。</p></div>';
+}
+function openAccountHistory(accountId, all) {
+  historyAccountId = accountId;
+  $('account-history-month').value = all ? today.slice(0,7) : $('stats-month').value;
+  $('account-history-kind').value = all ? 'all' : 'expense';
+  renderAccountHistory();
+  $('account-history-dialog').showModal();
+}
+$('account-history-month').onchange = () => {
+  if (!$('account-history-month').value) $('account-history-month').value = today.slice(0,7);
+  renderAccountHistory();
+};
+$('account-history-kind').onchange = renderAccountHistory;
 function renderStats() {
   const month = $('stats-month').value;
   if (!/^\d{4}-\d{2}$/.test(month)) return;
@@ -93,13 +119,15 @@ function renderStats() {
   const expense = expenses.reduce((s,e) => s + e.amount,0);
   const income = list.filter(e => e.kind === 'income').reduce((s,e) => s + e.amount,0);
   $('stats-summary').innerHTML = [['本月支出','¥ '+money(expense)],['本月收入','¥ '+money(income)],['收支记录',list.length+' 笔']].map(([label,value])=>`<div class="stats-metric"><span>${label}</span><strong>${value}</strong></div>`).join('');
+  const accountExpenses = Ledger.accountExpenses(state, month);
+  $('account-expenses').innerHTML = accountExpenses.length ? `<table class="account-expenses-table"><thead><tr><th scope="col">账户</th><th scope="col">支出金额</th><th scope="col">支出笔数</th><th scope="col">支出占比</th></tr></thead><tbody>${accountExpenses.map(a => `<tr data-expense-account="${escapeHtml(a.id)}"><th scope="row"><button class="account-expenses-name text-btn" data-account-history="${escapeHtml(a.id)}" aria-label="查看${escapeHtml(a.name)}交易明细">${escapeHtml(a.name)} ↗</button><small>${escapeHtml(a.type)}</small></th><td class="account-expenses-amount">¥ ${money(a.amount)}</td><td>${a.count} 笔</td><td>${a.share.toFixed(1)}%<div class="category-track" aria-hidden="true"><div class="category-fill" style="width:${a.share}%"></div></div></td></tr>`).join('')}</tbody></table>` : '<div class="empty-state"><p>还没有账户，添加账户并记账后即可查看支出统计。</p><button class="text-btn" data-new-account>＋ 添加账户</button></div>';
   const [year, mon] = month.split('-').map(Number);
   const days = new Date(year, mon, 0).getDate();
   const values = Array.from({length:days}, (_,i) => expenses.filter(e => Number(e.date.slice(-2)) === i+1).reduce((s,e)=>s+e.amount,0));
   const max = Math.max(1,...values);
   $('daily-chart').innerHTML = values.map((n,i) => `<button class="chart-bar" style="--height:${n ? Math.max(3, n/max*100):1}%" title="${i+1} 日：¥ ${money(n)}" aria-label="${i+1} 日支出 ${money(n)} 元，查看账单" data-chart-date="${month}-${String(i+1).padStart(2,'0')}"></button>`).join('');
-  const categoryTotals = Ledger.categories.map(c => [c,expenses.filter(e=>e.category === c).reduce((s,e)=>s+e.amount,0)]).filter(([,n])=>n).sort((a,b)=>b[1]-a[1]);
-  $('category-chart').innerHTML = categoryTotals.length ? categoryTotals.map(([c,n])=>`<div class="category-row"><div class="category-label"><span>${c}</span><span>¥ ${money(n)} <small>· ${(n/expense*100).toFixed(1)}%</small></span></div><div class="category-track"><div class="category-fill" style="width:${n/expense*100}%"></div></div></div>`).join('') : '<div class="empty-state"><div class="empty-symbol">▥</div><p>本月还没有支出记录。</p></div>';
+  const categoryTotals = Ledger.categoryOptions(state).map(c => [c,expenses.filter(e=>e.category === c).reduce((s,e)=>s+e.amount,0)]).filter(([,n])=>n).sort((a,b)=>b[1]-a[1]);
+  $('category-chart').innerHTML = categoryTotals.length ? categoryTotals.map(([c,n])=>`<div class="category-row"><div class="category-label"><span>${escapeHtml(c)}</span><span>¥ ${money(n)} <small>· ${(n/expense*100).toFixed(1)}%</small></span></div><div class="category-track"><div class="category-fill" style="width:${n/expense*100}%"></div></div></div>`).join('') : '<div class="empty-state"><div class="empty-symbol">▥</div><p>本月还没有支出记录。</p></div>';
 }
 function render() {
   $('total-balance').innerHTML = '<span class="currency">¥</span>' + money(state.accounts.reduce((s,a)=>s+a.balance,0));
@@ -114,6 +142,7 @@ function render() {
   $('manage-cards').innerHTML = accountCards(true);
   $('filter-account').innerHTML = options($('filter-account').value,true);
   renderDaily(); renderStats(); debtUI.render();
+  if ($('account-history-dialog').open) renderAccountHistory();
 }
 function openEntry(entryId) {
   if (!state.accounts.length) { toast('请先添加一个账户'); openAccount(); return; }
@@ -123,19 +152,31 @@ function openEntry(entryId) {
   $('entry-form').querySelector('[value=income]').disabled = Boolean(e?.debtId);
   $('entry-category').disabled = Boolean(e?.debtId);
   $('entry-account').innerHTML = options(e?.accountId,false);
-  $('entry-category').innerHTML = Ledger.categories.map(c=>`<option>${c}</option>`).join('');
+  $('entry-category').innerHTML = Ledger.categoryOptions(state).map(c=>`<option value="${escapeHtml(c)}">${escapeHtml(c)}</option>`).join('') + '<option value="">＋ 自定义分类…</option>';
   $('entry-date').value = e?.date || $('selected-date').value || today;
   $('entry-amount').value = e ? (e.amount/100).toFixed(2) : '';
   $('entry-note').value = e?.note || '';
   if (e) { $('entry-category').value = e.category; $('entry-form').elements.kind.value = e.kind; }
+  updateCustomCategory();
   $('entry-error').textContent = ''; $('entry-dialog').showModal(); $('entry-amount').focus();
 }
+function updateCustomCategory() {
+  const custom = !$('entry-category').disabled && $('entry-category').value === '';
+  $('custom-category-field').hidden = !custom;
+  $('entry-custom-category').disabled = !custom;
+  $('entry-custom-category').required = custom;
+}
+$('entry-category').onchange = () => {
+  updateCustomCategory();
+  if (!$('custom-category-field').hidden) $('entry-custom-category').focus();
+};
 $('entry-form').onsubmit = async event => {
   event.preventDefault();
   try {
     const amount = Ledger.cents($('entry-amount').value);
     if (amount <= 0) throw new Error('金额需要大于 0');
-    const next = Ledger.saveEntry(state,{ amount, kind:$('entry-form').elements.kind.value, accountId:$('entry-account').value, date:$('entry-date').value, category:$('entry-category').value, note:$('entry-note').value.trim() },editEntryId);
+    const category = $('entry-category').value || $('entry-custom-category').value.trim();
+    const next = Ledger.saveEntry(state,{ amount, kind:$('entry-form').elements.kind.value, accountId:$('entry-account').value, date:$('entry-date').value, category, note:$('entry-note').value.trim() },editEntryId);
     const negative = next.accounts.find(a=>a.id === $('entry-account').value).balance < 0;
     await commit(next); $('entry-dialog').close(); toast(negative ? '记录已保存，该账户余额已为负数，请核对余额。' : '记录已保存，账户余额已更新');
   } catch(error) { $('entry-error').textContent = error.message; }
@@ -167,7 +208,7 @@ $('account-form').onsubmit = async event => {
 function showView(view) {
   ['home','accounts','debts','stats'].forEach(v=>$(v+'-view').hidden = v !== view);
   document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view === view));
-  const text = {home:['把生活，记得清楚','每一笔收支，都是生活的细节。'],accounts:['账户资产','让每一份余额，都清晰可见。'],debts:['还款安排','每一笔待还款，每一个重要日期。'],stats:['收支洞察','用清楚的记录，了解生活的节奏。']}[view];
+  const text = {home:['账本总览','每一笔收支，都是生活的细节。'],accounts:['账户资产','让每一份余额，都清晰可见。'],debts:['还款安排','每一笔待还款，每一个重要日期。'],stats:['收支洞察','用清楚的记录，了解生活的节奏。']}[view];
   $('breadcrumb-view').textContent = {home:'总览',accounts:'账户管理',debts:'待还款',stats:'开销统计'}[view];
   $('page-title').textContent = text[0]; $('page-subtitle').textContent = text[1];
 }
@@ -176,6 +217,7 @@ document.addEventListener('click',event=> {
   if (target.dataset.view) showView(target.dataset.view);
   else if (target.hasAttribute('data-new-account')) openAccount();
   else if (target.hasAttribute('data-new-entry')) openEntry();
+  else if (target.dataset.accountHistory) openAccountHistory(target.dataset.accountHistory, target.hasAttribute('data-history-all'));
   else if (target.dataset.editAccount) openAccount(target.dataset.editAccount);
   else if (target.dataset.editEntry) openEntry(target.dataset.editEntry);
   else if (target.dataset.deleteAccount) {

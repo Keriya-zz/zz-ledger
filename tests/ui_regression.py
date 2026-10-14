@@ -14,7 +14,9 @@ from zzledger.server import make_server
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
 parser.add_argument('--preview-view', choices=('home','accounts','debts','stats'), default='debts')
-parser.add_argument('--preview-dialog', choices=('repayment','entry','debt','account'), default=None)
+parser.add_argument('--preview-dialog', choices=('repayment','entry','debt','account','account-history'), default=None)
+parser.add_argument('--preview-custom-category', action='store_true')
+parser.add_argument('--reference-a-fixture', action='store_true', help='Only change isolated preview data to the six-account concept A example')
 args = parser.parse_args()
 if not os.environ.get("CHROME_BIN"):
     raise SystemExit("请将 CHROME_BIN 环境变量设为本机 Chrome 可执行文件的路径。")
@@ -36,9 +38,54 @@ window.zzApp.ready.then(async () => {
   const submit = id => $(id).onsubmit({preventDefault(){}});
   const snapshot = () => window.zzApp.snapshot();
   try {
+    const previousMonth=$('stats-month').value;
+    $('stats-month').value='2026-10'; $('stats-month').onchange();
+    check($('account-expenses').querySelectorAll('tbody tr').length===3,'所有账户支出统计');
+    check($('account-expenses').querySelector('[data-expense-account="wx"] .account-expenses-amount').textContent==='¥ 28.00','账户月支出金额');
+    document.querySelector('#account-expenses [data-account-history="wx"]').click();
+    check($('account-history-dialog').open && $('account-history-month').value==='2026-10','账户明细继承月份');
+    check($('account-history-list').querySelectorAll('.entry-row').length===1 && $('account-history-list').textContent.includes('28.00') && !$('account-history-list').textContent.includes('地铁'),'明细仅包含当前账户');
+    $('account-history-kind').value='income'; $('account-history-kind').onchange();
+    check(!$('account-history-list').querySelector('.entry-row'),'收入筛选与空状态');
+    $('account-history-kind').value='all'; $('account-history-kind').onchange();
+    check($('account-history-list').querySelectorAll('.entry-row').length===1,'全部收支筛选');
+    $('account-history-month').value='2026-09'; $('account-history-month').onchange();
+    check(!$('account-history-list').querySelector('.entry-row'),'明细月份筛选');
+    $('account-history-dialog').querySelector('[data-close]').click();
+    $('stats-month').value='2026-09'; $('stats-month').onchange();
+    check([...$('account-expenses').querySelectorAll('.account-expenses-amount')].every(el=>el.textContent==='¥ 0.00'),'切换无支出月份');
+    $('stats-month').value=previousMonth; $('stats-month').onchange();
     $('add-account').click(); $('account-name').value='测试现金'; $('account-type').value='现金'; $('account-balance').value='200.00';
     await submit('account-form'); check(snapshot().accounts.length === 4,'账户添加');
     const cash=snapshot().accounts[3].id;
+    $('add-entry').click(); $('entry-account').value=cash; $('entry-amount').value='5.00';
+    $('entry-category').value=''; $('entry-category').onchange();
+    check(!$('custom-category-field').hidden && $('entry-custom-category').required,'自定义分类输入');
+    $('entry-custom-category').value='   '; await submit('entry-form');
+    check($('entry-error').textContent.includes('分类名称') && snapshot().entries.length===2,'空分类不能保存');
+    const realFetch=window.fetch;
+    window.fetch=async (...args)=>args[0]==='/api/ledger' && args[1]?.method==='POST' ? new Response(JSON.stringify({error:'模拟写入失败'}),{status:500,headers:{'Content-Type':'application/json'}}) : realFetch(...args);
+    $('entry-custom-category').value='学习'; await submit('entry-form');
+    check(!snapshot().customCategories && snapshot().entries.length===2,'分类保存失败回滚');
+    window.fetch=realFetch;
+    const customName='<img src=x>';
+    $('entry-custom-category').value=customName; await submit('entry-form');
+    const customId=snapshot().entries[0].id;
+    check(snapshot().customCategories.includes(customName) && snapshot().entries[0].category===customName,'自定义分类落盘');
+    document.querySelector('#account-expenses [data-account-history="'+cash+'"]').click();
+    check($('account-history-list').textContent.includes(customName) && !$('account-history-list').querySelector('img'),'交易明细文本转义');
+    $('account-history-dialog').close();
+    check($('entry-list').textContent.includes(customName) && !$('entry-list').querySelector('img'),'分类列表转义');
+    check($('category-chart').textContent.includes(customName) && !$('category-chart').querySelector('img'),'自定义分类统计与转义');
+    const persisted=JSON.parse(await window.DesktopAPI.read());
+    check(persisted.customCategories.includes(customName),'重新读取保留分类');
+    document.querySelector('[data-edit-entry="'+customId+'"]').click();
+    check($('entry-category').value===customName && $('custom-category-field').hidden,'编辑自定义分类回显');
+    $('entry-dialog').close();
+    document.querySelector('[data-delete-entry="'+customId+'"]').click(); await $('confirm-action').onclick();
+    $('add-entry').click();
+    check([...$('entry-category').options].some(o=>o.value===customName),'删除后仍可复用自定义分类');
+    $('entry-dialog').close();
     $('add-entry').click(); $('entry-account').value=cash; $('entry-amount').value='12.99'; $('entry-note').value='<img src=x onerror=alert(1)>';
     await Promise.all([submit('entry-form'),submit('entry-form')]);
     check(snapshot().entries.length === 3 && snapshot().accounts[3].balance === 18701,'异步重复提交保护');
@@ -92,18 +139,47 @@ window.zzApp.ready.then(async () => {
     check(document.documentElement.scrollWidth<=innerWidth,'横向溢出');
     await new Promise(resolve=>setTimeout(resolve,50));
     check(snapshot().accounts.length===3,'账户删除');
+    if (window.referenceAFixture) {
+      document.querySelector('[data-view="accounts"]').click();
+      const targetBalances=[['微信','201.19'],['支付宝','30.10'],['招商4345','246.96']];
+      for (let i=0;i<3;i++) {
+        const id=snapshot().accounts[i].id;
+        document.querySelector('[data-edit-account="'+id+'"]').click();
+        $('account-name').value=targetBalances[i][0]; $('account-balance').value=targetBalances[i][1];
+        await submit('account-form');
+      }
+      for (const [name,type,amount] of [['招商5055','银行卡','255.74'],['币安','其他','100.72'],['校园卡','其他','32.87']]) {
+        $('accounts-add').click(); $('account-name').value=name; $('account-type').value=type; $('account-balance').value=amount;
+        await submit('account-form');
+      }
+      check(snapshot().accounts.length===6,'六账户示例');
+      document.querySelector('[data-view="home"]').click();
+      check($('account-cards').querySelectorAll('.account-row').length===6,'首页账户列表渲染');
+      $('account-cards').querySelector('[data-edit-account]').click();
+      check($('account-dialog').open && $('account-name').value==='微信','列表编辑入口');
+      $('account-dialog').close();
+    }
     document.body.dataset.qaResult='PASS';
     $('toast').hidden=true;
   } catch(error) {document.body.dataset.qaResult='FAIL: '+error.message;}
 });
 </script>'''
 preview_actions = f"document.querySelector('[data-view=\"{args.preview_view}\"]').click();"
+if args.preview_view == 'home':
+    preview_actions += "$('selected-date').value='2026-10-12'; $('selected-date').onchange();"
+    preview_actions += "check($('entry-list').querySelectorAll('.entry-row').length===2, '首页每日开销明细');"
+    preview_actions += "check($('entry-list').closest('.balance-pane') && getComputedStyle($('add-entry')).borderRadius==='4px', '每日开销位置与按钮圆角');"
 if args.preview_dialog:
-    selector = {'repayment':'[data-repay-debt]', 'entry':'#add-entry', 'debt':'[data-new-debt]', 'account':'#add-account'}[args.preview_dialog]
+    selector = {'repayment':'[data-repay-debt]', 'entry':'#add-entry', 'debt':'[data-new-debt]', 'account':'#add-account', 'account-history':'#account-expenses [data-account-history]'}[args.preview_dialog]
     preview_actions += f"document.querySelector('{selector}').click();"
+if args.preview_custom_category:
+    if args.preview_dialog != 'entry': parser.error('--preview-custom-category requires --preview-dialog entry')
+    preview_actions += "$('entry-category').value=''; $('entry-category').onchange(); $('entry-custom-category').value='学习'; $('entry-amount').value='25.00';"
 preview_actions += "check(document.querySelector('main').scrollWidth <= document.querySelector('main').clientWidth, '内容区横向溢出');"
+preview_actions += "await document.fonts.ready; await new Promise(resolve => setTimeout(resolve,220));"
 script=script.replace("document.body.dataset.qaResult='PASS';", preview_actions+" document.body.dataset.qaResult='PASS';")
-p=assets/'index.html';p.write_text(p.read_text(encoding='utf-8').replace('</body>',script+'</body>'),encoding='utf-8')
+fixture_config = '<script>window.referenceAFixture='+('true' if args.reference_a_fixture else 'false')+';</script>'
+p=assets/'index.html';p.write_text(p.read_text(encoding='utf-8').replace('</body>',fixture_config+script+'</body>'),encoding='utf-8')
 server,url,_=make_server(assets,store)
 thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
 try:

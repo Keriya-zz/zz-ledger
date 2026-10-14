@@ -1,0 +1,149 @@
+/* Concept A: aubergine navigation, ivory editorial ledger, real live account data. */
+.window-titlebar { background: var(--bg); border-bottom: 0; }
+.title-drag, .window-controls { border-bottom: 1px solid var(--border); }
+.title-identity>span { visibility: hidden; }
+.title-identity { background: var(--sidebar-bg); color: var(--sidebar-muted); height: 100%; }
+.title-logo { color: #EDE5F3; }
+.title-divider { color: #887195; }
+.title-drag span { color: #B6A8BC; font-size: 10px; }
+.sidebar { background: linear-gradient(150deg,#302139,#352640); border-right-color: #483451; padding: 20px 8px 24px; }
+.sidebar .brand { padding: 0 24px; }
+.brand { color: var(--sidebar-text); font-family: var(--font-title); font-size: 30px; }
+.brand-icon { background: #EAE1F0; border-color: #D7C8E1; color: #50355E; width: 44px; height: 44px; border-radius: 8px; }
+.brand small { font-family: var(--font-body); color: var(--sidebar-muted); font-size: 12px; letter-spacing: .5px; }
+.sidebar-illustration { flex-shrink: 0; height: 145px; margin: 20px 17px 14px; pointer-events: none; user-select: none; }
+.sidebar-illustration img { display: block; width: 100%; height: 100%; object-fit: contain; opacity: 1; filter: brightness(1.7); }
+.nav-item { color: #DED0E8; height: 48px; margin-bottom: 8px; padding: 0 30px; font-family: var(--font-title); font-size: 16px; }
+.nav-item .line-icon { width: 19px; height: 19px; }
+.nav-item:hover { color: #F6F0FA; background: #423049; }
+.nav-item.active { color: #F7F0FC; background: linear-gradient(90deg,#584266,#4B3559); font-weight: 500; }
+.nav-item.active::before { background: #BA9BCD; height: 20px; }
+.nav-debt-count { color: #DCC7E9; background: #6B4E79; }
+.sidebar-bottom { padding: 28px 26px 0; }
+.sidebar-note { border-color: #665170; padding-bottom: 20px; margin-bottom: 22px; }
+.sidebar-note::before { content: ""; display: block; width: 40px; height: 1px; background: #B9A9C6; margin-bottom: 15px; }
+.sidebar-note p { color: #BBA5C8; font-family: var(--font-title); font-size: 14px; letter-spacing: 1px; }
+.local-dot { color: var(--sidebar-muted); }
+.local-dot::before { background: #B8A6C5; }
+.quiet-btn { color: var(--sidebar-muted); }
+.quiet-btn:hover { color: #F8F2FC; }
+main { background: var(--bg); padding-top: 28px; }
+h1, h2, .dialog-heading h2 { font-family: var(--font-title); }
+h1 { font-size: 39px; font-weight: 600; letter-spacing: -.8px; margin-top: 0; margin-bottom: 13px; }
+.page-header { margin-bottom: 24px; }
+.page-header .eyebrow { font-size: 12px; color: var(--text-secondary); }
+.page-header p { margin-top: 10px; font-size: 12px; }
+.page-breadcrumb { margin-bottom: 21px; }
+main:has(#home-view:not([hidden])) .page-breadcrumb, main:has(#home-view:not([hidden])) .page-header p { display: none; }
+.home-editorial { display: grid; grid-template-columns: minmax(0,.40fr) minmax(0,.60fr); gap: 0; margin-bottom: 30px; }
+.balance-pane { min-width: 0; position: relative; padding: 9px 28px 0 0; border-right: 1px solid var(--border); }
+.accounts-pane { min-width: 0; padding-left: 29px; }
+.balance-pane .total-card { min-height: 0; padding: 0; background: transparent; border: 0; border-radius: 0; color: var(--ink); }
+.balance-pane .card-eyebrow { color: var(--ink); font-size: 13px; gap: 6px; flex-wrap: wrap; }
+.balance-pane .card-eyebrow span { color: var(--text-secondary); font-size: 11px; }
+.balance-pane .total-number { margin: 22px 0 15px; font: 400 clamp(48px,5.4vw,82px)/1.08 var(--font-number); color: var(--ink); letter-spacing: -3px; }
+.balance-pane .total-number .currency { color: var(--ink); font-size: 29px; margin-right: 7px; }
+.balance-pane .total-footer { padding-top: 14px; border-top: 1px solid var(--border); color: var(--text-secondary); font-size: 12px; flex-wrap: wrap; }
+.balance-pane .total-footer button { color: var(--purple-dark); font-size: 11px; }
+.spending-pair { display: grid; grid-template-columns: minmax(0,1fr) minmax(0,1fr); gap: 18px; margin-top: 34px; }
+.spending-pair .summary-card { padding: 0; background: transparent; border: 0; border-radius: 0; min-width: 0; }
+.spending-pair .summary-card+ .summary-card { padding-left: 17px; border-left: 1px solid var(--border); }
+.spending-pair .summary-card>span { font-size: 12px; color: var(--text); }
+.spending-pair .metric-tag { font-size: 8px; letter-spacing: .5px; margin-left: 4px; }
+.spending-pair .summary-card strong { margin: 12px 0 11px; font: 400 clamp(25px,2.5vw,37px)/1.25 var(--font-number); color: var(--ink); letter-spacing: -1px; }
+.spending-pair .summary-card>small { font-size: 11px; line-height: 1.7; }
+.account-list-heading { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
+.account-list-heading h2 { font-size: 20px; font-weight: 600; }
+.account-list-heading .count-pill { background: transparent; font-size: 14px; color: var(--text-secondary); }
+.account-list-heading .text-btn { font-size: 11px; white-space: nowrap; }
+.account-list-labels, .account-row { display: grid; grid-template-columns: minmax(120px,1.1fr) minmax(95px,.85fr) minmax(105px,1fr) 20px; gap: 12px; align-items: center; }
+.account-list-labels { color: var(--text-secondary); font-size: 11px; padding: 0 0 13px; border-bottom: 1px solid var(--border); }
+.account-list-labels>span:nth-child(3) { text-align: right; }
+.account-row { min-height: 73px; padding: 11px 0; border-bottom: 1px solid var(--border); }
+.account-row:hover { background: #F4EFF6; }
+.account-row-name { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.account-row-name h3 { margin: 0; font-family: var(--font-title); font-size: 15px; font-weight: 600; line-height: 1.5; overflow-wrap: anywhere; }
+.account-row .account-icon { width: 34px; height: 34px; border-radius: 9px; }
+.account-row-type { color: var(--text-secondary); font-size: 11px; overflow-wrap: anywhere; }
+.account-row-value { text-align: right; color: var(--ink); font: 400 26px/1.4 var(--font-number); font-variant-numeric: tabular-nums; letter-spacing: -.5px; overflow-wrap: anywhere; }
+.account-row-value small { margin-right: 5px; font-size: 13px; }
+.account-row-value.negative { color: var(--danger); }
+.account-row-edit { color: var(--purple-dark); font-size: 23px; padding: 4px 0; min-height: 31px; }
+.account-row-edit:hover { color: #281333; }
+.accounts-pane .debt-teaser { margin-top: 23px; background: var(--surface-secondary); border-color: #E9E1EF; border-radius: 7px; padding: 14px 15px; gap: 10px; flex-wrap: wrap; }
+.accounts-pane .debt-teaser strong { color: var(--ink); font: 400 23px var(--font-number); }
+.accounts-pane .debt-teaser>span:first-child { font-family: var(--font-title); color: var(--purple-dark); font-size: 14px; }
+.accounts-pane .debt-teaser .text-btn { font-size: 11px; white-space: nowrap; }
+/* The live daily ledger belongs beside balances, above decorative artwork. */
+.balance-pane .ledger-panel { margin-top: 26px; padding: 20px 0 0; border: 0; border-top: 1px solid var(--border); border-radius: 0; background: transparent; }
+.balance-pane .ledger-heading { align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 14px; }
+.balance-pane .ledger-heading h2 { font-size: 20px; }
+.balance-pane .ledger-heading p { margin-top: 4px; }
+.balance-pane .date-controls { flex-wrap: wrap; gap: 3px; }
+.balance-pane .date-controls input { padding: 7px 8px; max-width: 132px; }
+.balance-pane .daily-strip { flex-wrap: wrap; gap: 8px 18px; padding: 10px 12px; margin: 14px 0; border-radius: 4px; }
+.balance-pane .daily-strip b { margin-left: 5px; }
+.balance-pane .daily-strip>span:last-child { margin-left: 0; }
+.balance-pane .filters { flex-wrap: wrap; gap: 8px; margin: 12px 0 6px; }
+.balance-pane .search-box { flex: 1 1 140px; max-width: none; border-radius: 4px; }
+.balance-pane .search-box input { padding: 8px 5px; }
+.balance-pane .filters select { flex: 0 1 110px; max-width: 100%; padding: 8px; }
+.balance-pane .filters>.text-btn { padding: 2px 0; }
+.balance-pane .entry-row { display: grid; grid-template-columns: 28px minmax(0,1fr) auto; gap: 6px 9px; padding: 12px 0; }
+.balance-pane .entry-icon { width: 28px; height: 28px; border-radius: 5px; }
+.balance-pane .entry-money { font-size: 16px; font-weight: 400; }
+.balance-pane .entry-actions { grid-column: 2 / -1; justify-content: flex-end; }
+.balance-pane .entry-actions button { padding: 2px 5px; }
+.balance-pane .empty-state { padding: 22px 10px; }
+.balance-pane .empty-symbol svg { width: 40px; height: 40px; }
+.primary-btn, .secondary-btn, .debt-actions .primary-btn, .nav-item, .date-controls>button, .kind-toggle span, .close-btn { border-radius: var(--radius-button); }
+.window-controls button { border-radius: 0; }
+
+.stats-metric strong, .account-value, .debt-amount strong { font-weight: 400; }
+.debt-metrics .stats-metric:first-child { background: #50355E; border-color: #50355E; }
+.debt-card { background: #FFFEFC; }
+@media(min-width:1550px) {
+  .balance-pane .total-number { font-size: 86px; }
+  .account-row { min-height: 82px; }
+}
+@media(max-width:1250px) {
+  .balance-pane { padding-right: 22px; }
+  .accounts-pane { padding-left: 23px; }
+  .account-list-labels, .account-row { grid-template-columns: minmax(115px,1fr) minmax(90px,.8fr) minmax(85px,.85fr) 17px; gap: 8px; }
+  .account-row-value { font-size: 23px; }
+  .spending-pair { gap: 12px; }
+  .spending-pair .summary-card+ .summary-card { padding-left: 12px; }
+  .spending-pair .metric-tag { display: none; }
+}
+@media(max-width:1120px) {
+  .home-editorial { grid-template-columns: 1fr; }
+  .balance-pane { padding-right: 0; border-right: 0; padding-bottom: 25px; border-bottom: 1px solid var(--border); }
+  .balance-pane .total-number { font-size: 62px; letter-spacing: -2px; }
+  .spending-pair { margin-top: 25px; max-width: 550px; gap: 26px; }
+  .spending-pair .summary-card+ .summary-card { padding-left: 25px; }
+  .spending-pair .summary-card strong { font-size: 32px; }
+  .accounts-pane { padding-left: 0; padding-top: 28px; }
+  .account-list-labels, .account-row { grid-template-columns: minmax(150px,1fr) minmax(120px,.8fr) minmax(110px,.8fr) 20px; gap: 12px; }
+  .account-row-value { font-size: 27px; }
+  h1 { font-size: 34px; }
+}
+@media(max-width:780px) {
+  .account-list-labels, .account-row { grid-template-columns: minmax(100px,1fr) minmax(95px,.8fr) 20px; gap: 8px; }
+  .account-list-labels>span:nth-child(2), .account-row-type { display: none; }
+  .account-row-name h3 { font-size: 14px; }
+  .account-row-value { font-size: 23px; }
+  .balance-pane .total-number { font-size: 53px; }
+}
+
+@media(max-width:1000px) {
+  .sidebar { padding-left: 8px; padding-right: 8px; }
+  .sidebar .brand { padding: 0 8px; }
+  .sidebar .nav-item { padding: 0 20px; }
+  .sidebar-bottom { padding-left: 16px; padding-right: 16px; }
+  .sidebar-illustration { height: 115px; margin: 18px 12px 12px; }
+}
+@media(max-height:760px) {
+  .sidebar-illustration { height: 85px; margin-top: 14px; margin-bottom: 10px; }
+  .sidebar-bottom { padding-top: 16px; }
+  .sidebar-note { padding-bottom: 12px; margin-bottom: 12px; }
+}
