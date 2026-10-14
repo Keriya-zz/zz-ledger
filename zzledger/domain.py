@@ -40,6 +40,16 @@ def validate_ledger(data):
     for d in debts:
         if paid[d["id"]] > d["amount"]:
             raise ValueError("还款金额不能超过应还总额")
+    transfers = data.get("transfers", [])
+    if not isinstance(transfers, list):
+        raise ValueError("划转记录格式不正确")
+    transfer_ids = set()
+    for t in transfers:
+        if not isinstance(t, dict) or not isinstance(t.get("id"), str) or not t["id"] or t["id"] in transfer_ids or not isinstance(t.get("fromAccountId"), str) or not isinstance(t.get("toAccountId"), str) or t["fromAccountId"] not in ids or t["toAccountId"] not in ids or t["fromAccountId"] == t["toAccountId"] or not integer(t.get("amount")) or t["amount"] <= 0 or not isinstance(t.get("note"), str) or len(t["note"]) > 200:
+            raise ValueError("划转记录无效")
+        if not isinstance(t.get("date"), str) or date.fromisoformat(t["date"]).isoformat() != t["date"]:
+            raise ValueError("划转日期无效")
+        transfer_ids.add(t["id"])
     return data
 
 

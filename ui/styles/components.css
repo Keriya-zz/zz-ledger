@@ -156,3 +156,7 @@ dialog::backdrop { background: #27232E40; }
 .history-filters label { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--text-secondary); }
 .account-expenses-name.text-btn { text-align: left; font-size: 13px; max-width: 100%; overflow-wrap: anywhere; }
 .account-expenses-name.text-btn:hover { text-decoration: underline; }
+
+.account-toolbar { display: flex; flex-wrap: wrap; gap: 10px; }
+.transfer-panel { margin-top: 24px; }
+.transfer-panel .section-heading { flex-wrap: wrap; }

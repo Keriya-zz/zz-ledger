@@ -1,0 +1,34 @@
+const assert = require('node:assert/strict');
+const L = require('../ui/core.js');
+const data = L.initial();
+data.accounts.forEach(a=>a.balance=10000);
+const [a,b,c]=data.accounts;
+const input={fromAccountId:a.id,toAccountId:b.id,amount:1234,date:'2026-10-14',note:'测试划转'};
+const original=JSON.stringify(data);
+let next=L.saveTransfer(data,input);
+const id=next.transfers[0].id;
+assert.deepEqual(next.accounts.map(a=>a.balance),[8766,11234,10000]);
+assert.equal(JSON.stringify(data),original);
+assert.equal(next.entries.length,0);
+assert.equal(L.totals(next,input.date).expense,0);
+assert.equal(L.totals(next,input.date).income,0);
+assert.ok(L.accountExpenses(next,'2026-10').every(a=>a.amount===0));
+next=L.saveTransfer(next,{...input,fromAccountId:b.id,toAccountId:c.id,amount:500},id);
+assert.deepEqual(next.accounts.map(a=>a.balance),[10000,9500,10500]);
+assert.equal(next.transfers.length,1);
+next=L.removeTransfer(next,id);
+assert.deepEqual(next.accounts.map(a=>a.balance),[10000,10000,10000]);
+for (const overrides of [{amount:0},{amount:-1},{amount:1.1},{amount:1e12},{fromAccountId:b.id},{toAccountId:'missing'},{date:'2026-02-30'},{note:'x'.repeat(201)}]) {
+  assert.throws(()=>L.saveTransfer(data,{...input,...overrides}));
+}
+const extreme=JSON.parse(JSON.stringify(data)); extreme.accounts[1].balance=999999999999;
+assert.throws(()=>L.saveTransfer(extreme,input));
+assert.equal(extreme.accounts[0].balance,10000);
+assert.throws(()=>L.saveTransfer(data,input,'missing'));
+assert.throws(()=>L.removeTransfer(data,'missing'));
+const saved=L.saveTransfer(data,input);
+assert.deepEqual(L.validate(JSON.parse(JSON.stringify(saved))),saved);
+assert.throws(()=>L.validate({...saved,transfers:[saved.transfers[0],saved.transfers[0]]}));
+assert.throws(()=>L.validate({...saved,transfers:null}));
+assert.throws(()=>L.validate({...saved,accounts:saved.accounts.slice(1)}));
+console.log('PASS: 划转余额守恒、修改撤销、统计隔离、输入校验、溢出保护及备份往返。');

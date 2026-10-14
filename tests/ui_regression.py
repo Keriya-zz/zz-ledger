@@ -14,7 +14,7 @@ from zzledger.server import make_server
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
 parser.add_argument('--preview-view', choices=('home','accounts','debts','stats'), default='debts')
-parser.add_argument('--preview-dialog', choices=('repayment','entry','debt','account','account-history'), default=None)
+parser.add_argument('--preview-dialog', choices=('repayment','entry','debt','account','account-history','transfer'), default=None)
 parser.add_argument('--preview-custom-category', action='store_true')
 parser.add_argument('--reference-a-fixture', action='store_true', help='Only change isolated preview data to the six-account concept A example')
 args = parser.parse_args()
@@ -58,6 +58,39 @@ window.zzApp.ready.then(async () => {
     $('add-account').click(); $('account-name').value='测试现金'; $('account-type').value='现金'; $('account-balance').value='200.00';
     await submit('account-form'); check(snapshot().accounts.length === 4,'账户添加');
     const cash=snapshot().accounts[3].id;
+    const beforeTransfer=JSON.stringify(snapshot());
+    document.querySelector('[data-new-transfer]').click();
+    $('transfer-from').value='wx'; $('transfer-to').value='wx'; $('transfer-amount').value='10.01';
+    await submit('transfer-form');
+    check($('transfer-error').textContent.includes('不能相同') && JSON.stringify(snapshot())===beforeTransfer,'同账户划转被拒绝');
+    $('transfer-to').value=cash; $('transfer-note').value='<img src=x>';
+    const transferFetch=window.fetch;
+    window.fetch=async (...args)=>args[0]==='/api/ledger' && args[1]?.method==='POST' ? new Response(JSON.stringify({error:'模拟划转保存失败'}),{status:500,headers:{'Content-Type':'application/json'}}) : transferFetch(...args);
+    await submit('transfer-form');
+    check(JSON.stringify(snapshot())===beforeTransfer && $('transfer-error').textContent.includes('保存失败'),'划转保存失败两边余额不变');
+    window.fetch=transferFetch;
+    await Promise.all([submit('transfer-form'),submit('transfer-form')]);
+    check(snapshot().transfers.length===1 && snapshot().accounts[0].balance===127639 && snapshot().accounts[3].balance===21001,'划转双余额更新及重复提交保护');
+    const transferId=snapshot().transfers[0].id;
+    check($('transfer-list').textContent.includes('<img src=x>') && !$('transfer-list').querySelector('img'),'划转备注安全显示');
+    check(JSON.parse(await window.DesktopAPI.read()).transfers.length===1,'划转保存可重新读取');
+    document.querySelector('#manage-cards [data-account-history="'+cash+'"]').click();
+    $('account-history-kind').value='transfer'; $('account-history-kind').onchange();
+    check($('account-history-list').textContent.includes('转入') && $('account-history-list').textContent.includes('+ ¥ 10.01'),'转入账户明细');
+    $('account-history-dialog').close();
+    document.querySelector('#manage-cards [data-account-history="wx"]').click();
+    $('account-history-kind').value='transfer'; $('account-history-kind').onchange();
+    check($('account-history-list').textContent.includes('转出') && $('account-history-list').textContent.includes('− ¥ 10.01'),'转出账户明细');
+    $('account-history-dialog').close();
+    document.querySelector('[data-delete-account="'+cash+'"]').click();
+    check(!$('confirm-dialog').open && $('toast').textContent.includes('划转'),'禁止删除划转关联账户');
+    document.querySelector('#transfer-list [data-edit-transfer]').click();
+    $('transfer-from').value=cash; $('transfer-to').value='alipay'; $('transfer-amount').value='20.00';
+    await submit('transfer-form');
+    check(snapshot().accounts[0].balance===128640 && snapshot().accounts[3].balance===18000 && snapshot().accounts[1].balance===217800,'编辑划转恢复原双方并调整新双方');
+    document.querySelector('#transfer-list [data-delete-transfer]').click(); await $('confirm-action').onclick();
+    check(snapshot().transfers.length===0 && snapshot().accounts[3].balance===20000 && snapshot().accounts[1].balance===215800,'删除划转恢复双方余额');
+
     $('add-entry').click(); $('entry-account').value=cash; $('entry-amount').value='5.00';
     $('entry-category').value=''; $('entry-category').onchange();
     check(!$('custom-category-field').hidden && $('entry-custom-category').required,'自定义分类输入');
@@ -170,7 +203,7 @@ if args.preview_view == 'home':
     preview_actions += "check($('entry-list').querySelectorAll('.entry-row').length===2, '首页每日开销明细');"
     preview_actions += "check($('entry-list').closest('.balance-pane') && getComputedStyle($('add-entry')).borderRadius==='4px', '每日开销位置与按钮圆角');"
 if args.preview_dialog:
-    selector = {'repayment':'[data-repay-debt]', 'entry':'#add-entry', 'debt':'[data-new-debt]', 'account':'#add-account', 'account-history':'#account-expenses [data-account-history]'}[args.preview_dialog]
+    selector = {'repayment':'[data-repay-debt]', 'entry':'#add-entry', 'debt':'[data-new-debt]', 'account':'#add-account', 'account-history':'#account-expenses [data-account-history]', 'transfer':'[data-new-transfer]'}[args.preview_dialog]
     preview_actions += f"document.querySelector('{selector}').click();"
 if args.preview_custom_category:
     if args.preview_dialog != 'entry': parser.error('--preview-custom-category requires --preview-dialog entry')

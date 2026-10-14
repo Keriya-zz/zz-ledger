@@ -56,6 +56,13 @@
       entryIds.add(e.id);
       if (e.debtId !== undefined && (!debtIds.has(e.debtId) || e.kind !== 'expense' || e.category !== '还款')) throw new Error('还款记录关联无效');
     }
+    const transfers = data.transfers === undefined ? [] : data.transfers;
+    if (!Array.isArray(transfers)) throw new Error('划转记录格式不正确');
+    const transferIds = new Set();
+    for (const t of transfers) {
+      if (!t || typeof t.id !== 'string' || !t.id || transferIds.has(t.id) || !ids.has(t.fromAccountId) || !ids.has(t.toAccountId) || t.fromAccountId === t.toAccountId || !Number.isSafeInteger(t.amount) || t.amount <= 0 || t.amount > 999999999999 || !validDate(t.date) || typeof t.note !== 'string' || t.note.length > 200) throw new Error('划转记录无效');
+      transferIds.add(t.id);
+    }
     for (const d of debts) if (paid(data, d.id) > d.amount) throw new Error('还款金额不能超过应还总额');
     return data;
   }
@@ -87,6 +94,36 @@
     if (!entry) throw new Error('记录不存在');
     next.accounts.find(a => a.id === entry.accountId).balance -= entry.kind === 'expense' ? -entry.amount : entry.amount;
     next.entries = next.entries.filter(e => e.id !== entryId);
+    return validate(next);
+  }
+  function applyTransfer(data, transfer, direction) {
+    const from = data.accounts.find(a => a.id === transfer.fromAccountId);
+    const to = data.accounts.find(a => a.id === transfer.toAccountId);
+    if (!from || !to || from.id === to.id) throw new Error('请选择两个不同的有效账户');
+    from.balance -= transfer.amount * direction;
+    to.balance += transfer.amount * direction;
+  }
+  function saveTransfer(data, input, editId) {
+    const next = JSON.parse(JSON.stringify(data));
+    next.transfers ||= [];
+    if (editId) {
+      const old = next.transfers.find(t => t.id === editId);
+      if (!old) throw new Error('划转记录不存在');
+      applyTransfer(next, old, -1);
+      next.transfers = next.transfers.filter(t => t.id !== editId);
+    }
+    const transfer = {id:editId || id(), fromAccountId:input.fromAccountId, toAccountId:input.toAccountId, amount:input.amount, date:input.date, note:input.note};
+    next.transfers.unshift(transfer);
+    validate(next);
+    applyTransfer(next, transfer, 1);
+    return validate(next);
+  }
+  function removeTransfer(data, transferId) {
+    const next = JSON.parse(JSON.stringify(data));
+    const transfer = (next.transfers || []).find(t => t.id === transferId);
+    if (!transfer) throw new Error('划转记录不存在');
+    applyTransfer(next, transfer, -1);
+    next.transfers = next.transfers.filter(t => t.id !== transferId);
     return validate(next);
   }
   function totals(data, date) {
@@ -134,5 +171,5 @@
     if (input.amount > d.remaining) throw new Error('还款金额不能超过剩余待还金额');
     return saveEntry(data,{...input,kind:'expense',category:'还款',debtId,note:input.note || '还款 · '+d.name});
   }
-  return { accountExpenses, categories, categoryOptions, id, cents, initial, validate, saveEntry, removeEntry, totals, validDate, paid, debtDetails, saveDebt, removeDebt, repayDebt };
+  return { saveTransfer, removeTransfer, accountExpenses, categories, categoryOptions, id, cents, initial, validate, saveEntry, removeEntry, totals, validDate, paid, debtDetails, saveDebt, removeDebt, repayDebt };
 });

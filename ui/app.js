@@ -86,18 +86,70 @@ function renderDaily() {
     return `<div class="entry-row"><span class="entry-icon">${e.kind === 'income' ? Icons.draw('arrow') : Icons.category(e.category)}</span><div class="entry-content"><strong>${escapeHtml(e.note || (e.kind === 'income' ? '收入' : e.category))}</strong><small>${escapeHtml(a.name)} · ${escapeHtml(e.category)} · ${e.kind === 'income' ? '收入':'支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income':''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span><div class="entry-actions"><button data-edit-entry="${escapeHtml(e.id)}">编辑</button><button class="danger-btn" data-delete-entry="${escapeHtml(e.id)}">删除</button></div></div>`;
   }).join('') : `<div class="empty-state"><div class="empty-symbol"><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="21" y="12" width="43" height="56" rx="9"/><path d="M28 12v56M37 29h17M37 40h17M37 51h11"/><path class="spark" d="m12 28 3-7 3 7 7 3-7 3-3 7-3-7-7-3Z"/></svg></div><h2>${sum.count ? '没有匹配的记录' : '这一天，还没有记账'}</h2><p>${sum.count ? '试试其他关键词或账户。' : '一顿午餐，一次出行，记录生活里的小小开销。'}</p><button class="text-btn" data-new-entry>＋ 记下第一笔</button></div>`;
 }
+let editTransferId = null;
+const transferAccountName = id => state.accounts.find(a=>a.id===id)?.name || '未知账户';
+function transferRow(t, accountId) {
+  const incoming = accountId === t.toAccountId;
+  const direction = accountId ? (incoming ? '转入' : '转出') : '划转';
+  return `<div class="entry-row"><span class="entry-icon">${Icons.draw('arrow')}</span><div class="entry-content"><strong>${escapeHtml(transferAccountName(t.fromAccountId))} → ${escapeHtml(transferAccountName(t.toAccountId))}</strong><small>${escapeHtml(t.date)} · ${direction}${t.note ? ' · '+escapeHtml(t.note) : ''}</small></div><span class="entry-money">${accountId ? (incoming ? '+' : '−')+' ' : ''}¥ ${money(t.amount)}</span><div class="entry-actions"><button data-edit-transfer="${escapeHtml(t.id)}">编辑</button><button class="danger-btn" data-delete-transfer="${escapeHtml(t.id)}">删除</button></div></div>`;
+}
+function renderTransfers() {
+  const list = (state.transfers || []).filter(t=>t.date.slice(0,7)===$('transfer-month').value).sort((a,b)=>b.date.localeCompare(a.date));
+  $('transfer-list').innerHTML = list.length ? list.map(t=>transferRow(t)).join('') : '<div class="empty-state"><p>所选月份暂无账户划转记录。</p><button class="text-btn" data-new-transfer>＋ 记录划转</button></div>';
+}
+function transferBalances() {
+  $('transfer-balances').textContent = ['from','to'].map((side,i)=> {
+    const account=state.accounts.find(a=>a.id===$('transfer-'+side).value);
+    return account ? `${i ? '转入' : '转出'}账户当前余额 ¥ ${money(account.balance)}` : '';
+  }).join(' · ');
+}
+function openTransfer(transferId) {
+  if (state.accounts.length < 2) { toast('请先添加至少两个账户，再进行划转'); return; }
+  const transfer = (state.transfers || []).find(t=>t.id===transferId);
+  editTransferId = transfer?.id || null;
+  $('transfer-form').reset();
+  $('transfer-title').textContent = transfer ? '编辑账户划转' : '账户划转';
+  $('transfer-from').innerHTML = options(transfer?.fromAccountId || state.accounts[0].id);
+  $('transfer-to').innerHTML = options(transfer?.toAccountId || state.accounts[1].id);
+  $('transfer-date').value = transfer?.date || today;
+  $('transfer-amount').value = transfer ? (transfer.amount/100).toFixed(2) : '';
+  $('transfer-note').value = transfer?.note || '';
+  $('transfer-error').textContent = '';
+  transferBalances();
+  $('transfer-dialog').showModal();
+  $('transfer-amount').focus();
+}
+$('transfer-from').onchange = transferBalances;
+$('transfer-to').onchange = transferBalances;
+$('transfer-form').onsubmit = async event => {
+  event.preventDefault();
+  if (saving) return;
+  try {
+    const input = {fromAccountId:$('transfer-from').value,toAccountId:$('transfer-to').value,amount:Ledger.cents($('transfer-amount').value),date:$('transfer-date').value,note:$('transfer-note').value.trim()};
+    if (input.amount <= 0) throw new Error('划转金额必须大于零');
+    if (input.fromAccountId === input.toAccountId) throw new Error('转出和转入账户不能相同');
+    const next = Ledger.saveTransfer(state,input,editTransferId);
+    const negative = next.accounts.find(a=>a.id===input.fromAccountId).balance < 0;
+    await commit(next);
+    $('transfer-month').value = input.date.slice(0,7); renderTransfers();
+    $('transfer-dialog').close();
+    toast(negative ? '划转已保存，转出账户余额为负数，请核对余额' : '划转已保存，双方余额已更新');
+  } catch(error) { $('transfer-error').textContent = error.message; }
+};
+$('transfer-month').value = today.slice(0,7);
+$('transfer-month').onchange = () => { if (!$('transfer-month').value) $('transfer-month').value=today.slice(0,7); renderTransfers(); };
 let historyAccountId = null;
 function renderAccountHistory() {
   const account = state.accounts.find(a => a.id === historyAccountId);
   if (!account) return;
   const month = $('account-history-month').value;
   const kind = $('account-history-kind').value;
-  const list = state.entries.filter(e => e.accountId === account.id && e.date.slice(0,7) === month && (kind === 'all' || e.kind === kind)).sort((a,b) => b.date.localeCompare(a.date));
+  const list = [...state.entries, ...(state.transfers || []).map(t=>({...t,kind:'transfer'}))].filter(e => (e.kind === 'transfer' ? e.fromAccountId === account.id || e.toAccountId === account.id : e.accountId === account.id) && e.date.slice(0,7) === month && (kind === 'all' || e.kind === kind)).sort((a,b) => b.date.localeCompare(a.date));
   $('account-history-title').textContent = account.name + ' · 交易明细';
   const expense = list.filter(e=>e.kind === 'expense').reduce((sum,e)=>sum+e.amount,0);
   const income = list.filter(e=>e.kind === 'income').reduce((sum,e)=>sum+e.amount,0);
-  $('account-history-summary').textContent = `${month} · ${list.length} 笔 · 支出 ¥ ${money(expense)} · 收入 ¥ ${money(income)}`;
-  $('account-history-list').innerHTML = list.length ? list.map(e=>`<div class="entry-row"><div class="entry-content"><strong>${escapeHtml(e.note || e.category)}</strong><small>${escapeHtml(e.date)} · ${escapeHtml(e.category)} · ${e.kind === 'income' ? '收入' : '支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income' : ''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span></div>`).join('') : '<div class="empty-state"><p>该账户在所选月份没有符合条件的交易。</p></div>';
+  $('account-history-summary').textContent = `${month} · ${list.length} 笔 · 支出 ¥ ${money(expense)} · 收入 ¥ ${money(income)} · 划转 ${list.filter(e=>e.kind==='transfer').length} 笔`;
+  $('account-history-list').innerHTML = list.length ? list.map(e=>e.kind === 'transfer' ? transferRow(e,account.id) : `<div class="entry-row"><div class="entry-content"><strong>${escapeHtml(e.note || e.category)}</strong><small>${escapeHtml(e.date)} · ${escapeHtml(e.category)} · ${e.kind === 'income' ? '收入' : '支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income' : ''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span></div>`).join('') : '<div class="empty-state"><p>该账户在所选月份没有符合条件的交易。</p></div>';
 }
 function openAccountHistory(accountId, all) {
   historyAccountId = accountId;
@@ -141,7 +193,7 @@ function render() {
   $('account-cards').innerHTML = accountCards(false);
   $('manage-cards').innerHTML = accountCards(true);
   $('filter-account').innerHTML = options($('filter-account').value,true);
-  renderDaily(); renderStats(); debtUI.render();
+  renderDaily(); renderStats(); debtUI.render(); renderTransfers();
   if ($('account-history-dialog').open) renderAccountHistory();
 }
 function openEntry(entryId) {
@@ -216,6 +268,12 @@ document.addEventListener('click',event=> {
   const target = event.target.closest('button'); if (!target) return;
   if (target.dataset.view) showView(target.dataset.view);
   else if (target.hasAttribute('data-new-account')) openAccount();
+  else if (target.hasAttribute('data-new-transfer')) openTransfer();
+  else if (target.dataset.editTransfer) openTransfer(target.dataset.editTransfer);
+  else if (target.dataset.deleteTransfer) {
+    const transferId = target.dataset.deleteTransfer;
+    confirmAction('删除这笔划转？','删除后，转出账户将加回金额，转入账户将扣回金额，总余额保持不变。',async ()=>{ await commit(Ledger.removeTransfer(state,transferId)); toast('划转已删除，双方余额已恢复'); },'删除划转');
+  }
   else if (target.hasAttribute('data-new-entry')) openEntry();
   else if (target.dataset.accountHistory) openAccountHistory(target.dataset.accountHistory, target.hasAttribute('data-history-all'));
   else if (target.dataset.editAccount) openAccount(target.dataset.editAccount);
@@ -223,7 +281,7 @@ document.addEventListener('click',event=> {
   else if (target.dataset.deleteAccount) {
     const accountId = target.dataset.deleteAccount;
     const a = state.accounts.find(a=>a.id === accountId);
-    if (state.entries.some(e=>e.accountId === accountId)) { toast('该账户有关联账单，请先处理账单后再删除。'); return; }
+    if (state.entries.some(e=>e.accountId === accountId) || (state.transfers || []).some(t=>t.fromAccountId === accountId || t.toAccountId === accountId)) { toast('该账户有关联账单或划转，请先处理记录后再删除。'); return; }
     confirmAction('删除账户',`删除「${a.name}」后，总余额将减少该账户的余额 ¥ ${money(a.balance)}。`,async ()=>{await commit({...state,accounts:state.accounts.filter(a=>a.id !== accountId)});toast('账户已删除');},'删除账户');
   } else if (target.dataset.deleteEntry) {
     const entryId = target.dataset.deleteEntry;
@@ -256,7 +314,7 @@ $('import-file').onchange = async event => {
   try {
     if (file.size > 10*1024*1024) throw new Error('备份文件过大，最大支持 10 MB');
     const next = Ledger.validate(JSON.parse(await file.text()));
-    confirmAction('导入账本',`将用备份中的 ${next.accounts.length} 个账户、${next.entries.length} 笔记录、${(next.debts || []).length} 笔待还款替换当前账本。请先导出当前账本以备恢复。`,async ()=> {
+    confirmAction('导入账本',`将用备份中的 ${next.accounts.length} 个账户、${next.entries.length} 笔收支、${(next.transfers || []).length} 笔划转、${(next.debts || []).length} 笔待还款替换当前账本。请先导出当前账本以备恢复。`,async ()=> {
       await commit(next, true); toast('账本已导入');
     },'替换并导入');
   } catch(error) { toast(error instanceof SyntaxError ? '文件不是有效的 JSON 账本' : error.message); }
