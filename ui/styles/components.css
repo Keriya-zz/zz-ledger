@@ -40,7 +40,6 @@
 .danger-btn { color: var(--danger); font-size: 12px; }
 .danger-btn:hover { color: #874155; }
 .ledger-panel, .white-panel { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 25px; }
-.ledger-heading p { color: var(--text-secondary); font-size: 12px; margin: 6px 0 0; }
 .date-controls { display: flex; align-items: center; gap: 5px; }
 .date-controls>button { min-width: 29px; min-height: 32px; font-size: 20px; color: var(--text-secondary); border-radius: 5px; }
 .date-controls>button:hover { background: var(--surface-secondary); }

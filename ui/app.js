@@ -61,7 +61,7 @@ document.querySelectorAll('[data-close]').forEach(b => b.onclick = () => $(b.dat
 const icons = { '微信':['微','wechat'], '支付宝':['支','alipay'], '银行卡':['▤','bank'], '现金':['¥','cash'], '其他':['◇','other'] };
 const categoryIcons = {'餐饮':'♨','交通':'↗','购物':'▢','生活':'⌂','娱乐':'♫','医疗':'✚','还款':'↗','其他':'◇'};
 function accountCards(management) {
-  if (!state.accounts.length) return '<div class="empty-state"><div class="empty-symbol">◇</div><p>还没有账户，添加一个开始记账吧。</p><button class="text-btn" data-new-account>＋ 添加账户</button></div>';
+  if (!state.accounts.length) return '<div class="empty-state"><div class="empty-symbol">◇</div><p>暂无账户</p><button class="text-btn" data-new-account>＋ 添加账户</button></div>';
   return state.accounts.map(a => {
     const [symbol, color] = icons[a.type];
     if (!management) return `<article class="account-row"><div class="account-row-name"><span class="account-icon ${color}">${Icons.account(a.type)}</span><h3>${escapeHtml(a.name)}</h3></div><span class="account-row-type">${escapeHtml(a.type)} · 可用余额</span><span class="account-row-value ${a.balance < 0 ? 'negative' : ''}"><small>¥</small>${money(a.balance)}</span><button class="account-row-edit" data-edit-account="${escapeHtml(a.id)}" aria-label="编辑${escapeHtml(a.name)}账户" title="编辑账户">›</button></article>`;
@@ -84,7 +84,7 @@ function renderDaily() {
   $('entry-list').innerHTML = list.length ? list.map(e => {
     const a = state.accounts.find(a => a.id === e.accountId);
     return `<div class="entry-row"><span class="entry-icon">${e.kind === 'income' ? Icons.draw('arrow') : Icons.category(e.category)}</span><div class="entry-content"><strong>${escapeHtml(e.note || (e.kind === 'income' ? '收入' : e.category))}</strong><small>${escapeHtml(a.name)} · ${escapeHtml(e.category)} · ${e.kind === 'income' ? '收入':'支出'}</small></div><span class="entry-money ${e.kind === 'income' ? 'income':''}">${e.kind === 'income' ? '+' : '−'} ¥ ${money(e.amount)}</span><div class="entry-actions"><button data-edit-entry="${escapeHtml(e.id)}">编辑</button><button class="danger-btn" data-delete-entry="${escapeHtml(e.id)}">删除</button></div></div>`;
-  }).join('') : `<div class="empty-state"><div class="empty-symbol"><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="21" y="12" width="43" height="56" rx="9"/><path d="M28 12v56M37 29h17M37 40h17M37 51h11"/><path class="spark" d="m12 28 3-7 3 7 7 3-7 3-3 7-3-7-7-3Z"/></svg></div><h2>${sum.count ? '没有匹配的记录' : '这一天，还没有记账'}</h2><p>${sum.count ? '试试其他关键词或账户。' : '一顿午餐，一次出行，记录生活里的小小开销。'}</p><button class="text-btn" data-new-entry>＋ 记下第一笔</button></div>`;
+  }).join('') : `<div class="empty-state"><div class="empty-symbol"><svg viewBox="0 0 80 80" aria-hidden="true"><rect x="21" y="12" width="43" height="56" rx="9"/><path d="M28 12v56M37 29h17M37 40h17M37 51h11"/><path class="spark" d="m12 28 3-7 3 7 7 3-7 3-3 7-3-7-7-3Z"/></svg></div><h2>${sum.count ? '没有匹配的记录' : '暂无记录'}</h2>${sum.count ? '<p>请调整搜索或账户筛选。</p>' : ''}<button class="text-btn" data-new-entry>＋ 记一笔</button></div>`;
 }
 let editTransferId = null;
 const transferAccountName = id => state.accounts.find(a=>a.id===id)?.name || '未知账户';
@@ -260,9 +260,9 @@ $('account-form').onsubmit = async event => {
 function showView(view) {
   ['home','accounts','debts','stats'].forEach(v=>$(v+'-view').hidden = v !== view);
   document.querySelectorAll('[data-view]').forEach(b=>b.classList.toggle('active',b.dataset.view === view));
-  const text = {home:['账本总览','每一笔收支，都是生活的细节。'],accounts:['账户资产','让每一份余额，都清晰可见。'],debts:['还款安排','每一笔待还款，每一个重要日期。'],stats:['收支洞察','用清楚的记录，了解生活的节奏。']}[view];
+  const text = {home:'账本总览',accounts:'账户资产',debts:'还款安排',stats:'收支洞察'}[view];
   $('breadcrumb-view').textContent = {home:'总览',accounts:'账户管理',debts:'待还款',stats:'开销统计'}[view];
-  $('page-title').textContent = text[0]; $('page-subtitle').textContent = text[1];
+  $('page-title').textContent = text;
 }
 document.addEventListener('click',event=> {
   const target = event.target.closest('button'); if (!target) return;
@@ -332,8 +332,7 @@ $('today-label').textContent = new Date().toLocaleDateString('zh-CN',{year:'nume
 render();
 {
   $('save-status').textContent = storageBlocked ? '账本读取失败' : '已保存到本地';
-  const footer = document.querySelector('footer span');
-  footer.textContent = '账本保存在软件文件夹的「账本.json」· 导出文件在「导出」目录';
+  const footer = document.querySelector('footer');
   footer.title = window.desktopConfig.directory;
   // 首次运行即创建文件，之后每次保存都有原子替换与上一版备份。
   if (!storageBlocked) {

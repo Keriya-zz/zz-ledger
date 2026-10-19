@@ -10,3 +10,12 @@ __pycache__/
 .紫记.lock
 .zz记.lock
 导出/
+
+# Android generated artifacts and local signing keys
+mobile/app/src/main/assets/
+mobile/build/
+mobile/output/
+mobile/.gradle/
+mobile/local.properties
+*.keystore
+*.jks

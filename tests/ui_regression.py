@@ -13,6 +13,7 @@ from zzledger.server import make_server
 
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
+parser.add_argument('--mobile', action='store_true')
 parser.add_argument('--preview-view', choices=('home','accounts','debts','stats'), default='debts')
 parser.add_argument('--preview-dialog', choices=('repayment','entry','debt','account','account-history','transfer'), default=None)
 parser.add_argument('--preview-custom-category', action='store_true')
@@ -21,7 +22,20 @@ args = parser.parse_args()
 if not os.environ.get("CHROME_BIN"):
     raise SystemExit("请将 CHROME_BIN 环境变量设为本机 Chrome 可执行文件的路径。")
 assets = root / '.qa/design-assets'
-shutil.copytree(root/'ui', assets, dirs_exist_ok=True)
+if args.mobile:
+    sys.path.insert(0,str(root/'mobile/scripts'))
+    from prepare_assets import prepare
+    shutil.copytree(prepare(),assets,dirs_exist_ok=True)
+    page=assets/'index.html'
+    import re
+    text=page.read_text(encoding='utf-8')
+    text=re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]+>', '', text)
+    mock='''<script>window.ZZNative={request:async(id,action,payload)=>{try{const args=JSON.parse(payload); const response=await fetch('/api/'+(action==='export'?'export':'ledger'),{method:action==='read'?'GET':'POST',headers:{'X-ZZ-Token':window.desktopConfig.token,'Content-Type':'application/json'},body:action==='read'?undefined:JSON.stringify(action==='export'?{content:args.content,filename:args.filename}:{value:args.value})}); const result=await response.json();window.zzNativeReply(id,response.ok?{value:result.value}:{error:result.error});}catch(e){window.zzNativeReply(id,{error:e.message});}}};</script>'''
+    text=text.replace('<script src="native-api.js">',mock+'<script src="native-api.js">')
+    page.write_text(text,encoding='utf-8')
+    api=assets/'native-api.js';api.write_text(api.read_text(encoding='utf-8-sig').replace("window.desktopConfig = {platform:'android',directory:'App 私有存储'};","window.desktopConfig = {...window.desktopConfig,platform:'android',directory:'App 私有存储'};"),encoding='utf-8')
+else:
+    shutil.copytree(root/'ui', assets, dirs_exist_ok=True)
 store = LedgerStore(root/'.qa/design-data')
 data = {"version":1,"accounts":[
     {"id":"wx","name":"微信","type":"微信","balance":128640},
@@ -58,6 +72,16 @@ window.zzApp.ready.then(async () => {
     $('add-account').click(); $('account-name').value='测试现金'; $('account-type').value='现金'; $('account-balance').value='200.00';
     await submit('account-form'); check(snapshot().accounts.length === 4,'账户添加');
     const cash=snapshot().accounts[3].id;
+    const beforeImport=JSON.stringify(snapshot());
+    await $('import-file').onchange({target:{files:[new File(['{bad'], 'bad.json')],value:'bad'}});
+    check(JSON.stringify(snapshot())===beforeImport && !$('confirm-dialog').open,'无效导入不改变账本');
+    await $('import-file').onchange({target:{files:[new File([beforeImport], 'backup.json')],value:'backup'}});
+    check($('confirm-dialog').open,'导入前需确认');
+    $('confirm-dialog').querySelector('[data-close]').click();
+    check(JSON.stringify(snapshot())===beforeImport,'取消导入保留账本');
+    await $('import-file').onchange({target:{files:[new File([beforeImport], 'backup.json')],value:'backup'}});
+    await $('confirm-action').onclick();
+    check(JSON.stringify(snapshot())===beforeImport,'导入恢复兼容账本');
     const beforeTransfer=JSON.stringify(snapshot());
     document.querySelector('[data-new-transfer]').click();
     $('transfer-from').value='wx'; $('transfer-to').value='wx'; $('transfer-amount').value='10.01';
@@ -209,6 +233,8 @@ if args.preview_custom_category:
     if args.preview_dialog != 'entry': parser.error('--preview-custom-category requires --preview-dialog entry')
     preview_actions += "$('entry-category').value=''; $('entry-category').onchange(); $('entry-custom-category').value='学习'; $('entry-amount').value='25.00';"
 preview_actions += "check(document.querySelector('main').scrollWidth <= document.querySelector('main').clientWidth, '内容区横向溢出');"
+if args.mobile and not args.preview_dialog:
+    preview_actions += "check($('add-entry').getBoundingClientRect().width>0 && $('add-entry').getBoundingClientRect().bottom<=innerHeight,'手机记账入口可见');"
 preview_actions += "await document.fonts.ready; await new Promise(resolve => setTimeout(resolve,220));"
 script=script.replace("document.body.dataset.qaResult='PASS';", preview_actions+" document.body.dataset.qaResult='PASS';")
 fixture_config = '<script>window.referenceAFixture='+('true' if args.reference_a_fixture else 'false')+';</script>'
@@ -216,13 +242,18 @@ p=assets/'index.html';p.write_text(p.read_text(encoding='utf-8').replace('</body
 server,url,_=make_server(assets,store)
 thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
 try:
-    for width,height,label in ((1440,1100,'design-desktop'),(900,900,'design-compact')):
+    for width,height,label in (((390,844,'mobile-desktop'),(360,800,'mobile-compact')) if args.mobile else ((1440,1100,'design-desktop'),(900,900,'design-compact'))):
         store.write(json.dumps(data,ensure_ascii=False))
         command=[os.environ['CHROME_BIN'],'--headless','--disable-gpu','--no-first-run','--no-default-browser-check',f'--user-data-dir={root / ".qa" / (label+"-profile")}',f'--window-size={width},{height}','--virtual-time-budget=6000',f'--screenshot={root / ".qa" / (label+".png")}', '--dump-dom',url]
-        result=subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30)
-        rendered=result.stdout.decode('utf-8',errors='replace')
+        if args.mobile:
+            command=['node',str(root/'tests/render_mobile.cjs'),url,str(width),str(height),str(root/'.qa'/(label+'-cdp-profile')),str(root/'.qa'/(label+'.png')),str(root/'.qa'/(label+'.html'))]
+            subprocess.run(command,check=True,timeout=40)
+            rendered=(root/'.qa'/(label+'.html')).read_text(encoding='utf-8')
+        else:
+            result=subprocess.run(command,stdout=subprocess.PIPE,stderr=subprocess.PIPE,timeout=30)
+            rendered=result.stdout.decode('utf-8',errors='replace')
         (root/'.qa'/f'{label}.html').write_text(rendered,encoding='utf-8')
-        if 'data-qa-result="PASS"' not in rendered: raise RuntimeError('浏览器回归失败：'+rendered[-2000:])
+        if 'data-qa-result="PASS"' not in rendered: raise RuntimeError('浏览器回归失败：'+str(__import__('re').findall(r'data-qa-result="([^"]*)"',rendered))+rendered[-300:])
         print(label+': PASS (async save, double submit, edit/delete, failure rollback, export, layout)')
 finally:
     server.shutdown();server.server_close()

@@ -14,7 +14,6 @@
 .title-logo { color: var(--purple-dark); font: italic 600 16px var(--font-editorial); letter-spacing: -1px; }
 .title-divider { color: #C6BECE; margin: 0 6px; }
 .title-drag { display: flex; align-items: center; justify-content: center; flex: 1; height: 100%; cursor: default; }
-.title-drag span { color: var(--muted); font: 11px var(--font-number); letter-spacing: 1.8px; }
 .window-controls { display: flex; height: 100%; }
 .window-controls button { display: grid; place-items: center; width: 45px; color: var(--text-secondary); }
 .window-controls svg { width: 14px; height: 14px; fill: none; stroke: currentColor; stroke-width: 1.15; }
@@ -25,7 +24,6 @@
 .brand { display: flex; align-items: center; gap: 12px; padding: 0 9px; color: var(--ink); font-size: 26px; font-weight: 600; letter-spacing: -1px; }
 .brand-icon { position: relative; display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border: 1px solid #E2D9EB; border-radius: 11px; color: var(--purple-dark); background: var(--surface-secondary); font: italic 600 29px/1 var(--font-editorial); letter-spacing: -3px; padding-right: 3px; }
 .logo-dot { display: none; }
-.brand small { display: block; margin-top: 4px; color: var(--text-secondary); font-size: 11px; font-weight: 400; letter-spacing: 1px; white-space: nowrap; }
 .nav-caption { margin: 42px 14px 14px; color: var(--muted); font-size: 11px; letter-spacing: 1px; }
 .nav-item { position: relative; display: flex; align-items: center; gap: 12px; width: 100%; height: 45px; margin-bottom: 6px; padding: 0 15px; border-radius: 8px; color: var(--text-secondary); text-align: left; font-size: 13px; }
 .nav-item span { color: inherit; }
@@ -35,9 +33,6 @@
 .nav-item.active::before { content: ''; position: absolute; left: 0; width: 3px; height: 17px; border-radius: 3px; background: var(--purple); }
 .nav-debt-count { min-width: 20px; padding: 0 5px; margin-left: auto; color: var(--purple-dark); background: #E7E0EF; border-radius: 5px; text-align: center; font: 11px/20px var(--font-number); }
 .sidebar-bottom { margin-top: auto; padding: 32px 12px 0; }
-.sidebar-note { padding-bottom: 18px; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
-.sidebar-note p { color: var(--muted); margin: 0; font-size: 11px; line-height: 1.8; }
-.note-spark { display: none; }
 .local-dot { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-secondary); margin-bottom: 12px; }
 .local-dot::before { content: ''; width: 5px; height: 5px; border-radius: 50%; background: #93AD9E; flex-shrink: 0; }
 .quiet-btn { display: flex; align-items: center; gap: 9px; width: 100%; padding: 7px 0; color: var(--text-secondary); font-size: 12px; text-align: left; }
@@ -50,7 +45,6 @@ main { flex: 1; min-width: 0; padding: var(--space-7) var(--space-9) var(--space
 .page-header { display: flex; align-items: center; justify-content: space-between; gap: 24px; margin-bottom: 28px; }
 .page-header>div { min-width: 0; }
 .eyebrow { color: var(--text-secondary); font-size: 11px; letter-spacing: .2px; }
-.page-header p { margin: 0; color: var(--text-secondary); font-size: 13px; }
 .heading-dot { color: var(--purple); }
 .overview-grid { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 18px; }
 .account-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 16px; }
@@ -72,12 +66,10 @@ footer { display: flex; justify-content: space-between; gap: 15px; margin-top: 2
   :root { --sidebar-width: 184px; }
   .sidebar { padding-left: 12px; padding-right: 12px; }
   .brand { padding: 0 4px; gap: 9px; font-size: 24px; }
-  .brand small { font-size: 11px; }
   main { padding: 23px 24px; }
   h1 { font-size: 28px; }
   .account-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
   .overview-grid { grid-template-columns: 1.2fr 1fr 1fr; }
-  .title-drag span { font-size: 11px; }
 }
 @media(max-width:780px) {
   .overview-grid { grid-template-columns: 1fr 1fr; }
@@ -85,5 +77,4 @@ footer { display: flex; justify-content: space-between; gap: 15px; margin-top: 2
   .stats-summary { grid-template-columns: 1fr; }
   .account-grid { grid-template-columns: 1fr; }
   .page-header { align-items: flex-start; gap: 12px; }
-  .title-drag span { display: none; }
 }
