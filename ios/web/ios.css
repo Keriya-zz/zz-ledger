@@ -1,0 +1,19 @@
+/* UIKit constrains this viewport to the safe area and the top of the keyboard. */
+:root { --font-title: 'Songti SC', 'Noto Serif CJK SC', serif; }
+html { -webkit-text-size-adjust: 100%; }
+body { -webkit-tap-highlight-color: transparent; }
+main { -webkit-overflow-scrolling: touch; }
+.sidebar { padding-bottom: 0; }
+input, select, textarea { font-size: 16px; min-width: 0; }
+input[type=date], input[type=month] { min-height: 44px; }
+button, .text-btn, .entry-actions button, .debt-teaser button { min-height: 44px; }
+.sidebar .nav-item { min-height: 62px; }
+dialog { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+#entry-dialog { height: 100%; padding-bottom: 24px; }
+@media (max-height: 500px) {
+  #entry-dialog .dialog-heading { margin-bottom: 8px; }
+  #entry-dialog .field { margin-bottom: 10px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+}

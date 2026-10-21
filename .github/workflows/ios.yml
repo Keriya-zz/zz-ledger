@@ -1,0 +1,28 @@
+name: iOS build
+on:
+  workflow_dispatch:
+  push:
+    paths: ['ios/**', 'ui/**', 'mobile/web/**', 'mobile/scripts/prepare_assets.py', '.github/workflows/ios.yml']
+  pull_request:
+    paths: ['ios/**', 'ui/**', 'mobile/web/**', 'mobile/scripts/prepare_assets.py', '.github/workflows/ios.yml']
+jobs:
+  simulator-build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Ledger and bridge tests
+        run: |
+          node core.test.cjs
+          node tests/debts.test.cjs
+          node tests/transfers.test.cjs
+          node tests/categories.test.cjs
+          node tests/account-expenses.test.cjs
+          node tests/ios_bridge.test.cjs
+          swift test --package-path ios
+      - name: Prepare bundled assets
+        run: python3 ios/scripts/prepare_assets.py
+      - name: Build iPhone simulator app without signing
+        run: xcodebuild -project ios/ZZLedger.xcodeproj -scheme ZZLedger -configuration Debug -sdk iphonesimulator -destination 'generic/platform=iOS Simulator' -derivedDataPath ios/build CODE_SIGNING_ALLOWED=NO build

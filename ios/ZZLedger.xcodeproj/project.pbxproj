@@ -1,0 +1,59 @@
+// !$*UTF8*$!
+{ archiveVersion = 1; classes = {}; objectVersion = 56; objects = {
+5F2EA2997C7EB214A3EECC26 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "AppDelegate.swift"; sourceTree = "<group>"; };
+94416B549286447D016A295F = { isa = PBXBuildFile; fileRef = 5F2EA2997C7EB214A3EECC26; };
+8FE3A3ECB51383404FC55737 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LedgerViewController.swift"; sourceTree = "<group>"; };
+1BE6BE17FF42726202DA3B36 = { isa = PBXBuildFile; fileRef = 8FE3A3ECB51383404FC55737; };
+69D31EE1CF123E5A8CD19619 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "LocalSchemeHandler.swift"; sourceTree = "<group>"; };
+F1402E67FE54EDEE4E567AE6 = { isa = PBXBuildFile; fileRef = 69D31EE1CF123E5A8CD19619; };
+E1FB3FA4C612DA042BB90765 = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/LedgerStore.swift"; sourceTree = "<group>"; };
+34F30D84DAA7B291299F00DF = { isa = PBXBuildFile; fileRef = E1FB3FA4C612DA042BB90765; };
+55E0C0B0230E1A6C96BD5BCF = { isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Core/BundledResource.swift"; sourceTree = "<group>"; };
+DD8BF7E6F990E1B760D574B5 = { isa = PBXBuildFile; fileRef = 55E0C0B0230E1A6C96BD5BCF; };
+2975104784A401E3880E2215 = { isa = PBXFileReference; lastKnownFileType = folder; path = "Web"; sourceTree = "<group>"; };
+67634C1FA9B51AB8ED779A8B = { isa = PBXBuildFile; fileRef = 2975104784A401E3880E2215; };
+795A02A63DC9C1E86758E98F = { isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets.xcassets"; sourceTree = "<group>"; };
+070048F437A415A8B24F192B = { isa = PBXBuildFile; fileRef = 795A02A63DC9C1E86758E98F; };
+6D123AE8AB04EEE632CC6C18 = { isa = PBXFileReference; lastKnownFileType = text.xml; path = "PrivacyInfo.xcprivacy"; sourceTree = "<group>"; };
+AFCFFF261453769F56AB7C4D = { isa = PBXBuildFile; fileRef = 6D123AE8AB04EEE632CC6C18; };
+9AC3B5AD93CBC0305C62F78F = { isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+A172CEDCAE47474B615C54D5 = { isa = PBXFileReference; explicitFileType = wrapper.application; path = ZZLedger.app; sourceTree = BUILT_PRODUCTS_DIR; };
+79F53C14AD822858C2024F2E = { isa = PBXGroup; path = ZZLedger; sourceTree = "<group>"; children = (5F2EA2997C7EB214A3EECC26, 8FE3A3ECB51383404FC55737, 69D31EE1CF123E5A8CD19619, E1FB3FA4C612DA042BB90765, 55E0C0B0230E1A6C96BD5BCF, 2975104784A401E3880E2215, 795A02A63DC9C1E86758E98F, 6D123AE8AB04EEE632CC6C18, 9AC3B5AD93CBC0305C62F78F,); };
+0A3E27B8CA818264D75C8D81 = { isa = PBXGroup; name = Products; sourceTree = "<group>"; children = (A172CEDCAE47474B615C54D5,); };
+4813494D137E1631BBA301D5 = { isa = PBXGroup; sourceTree = "<group>"; children = (79F53C14AD822858C2024F2E, 0A3E27B8CA818264D75C8D81,); };
+878A52FC5FF6A57D50B7B870 = { isa = PBXSourcesBuildPhase; buildActionMask = 2147483647; files = (94416B549286447D016A295F, 1BE6BE17FF42726202DA3B36, F1402E67FE54EDEE4E567AE6, 34F30D84DAA7B291299F00DF, DD8BF7E6F990E1B760D574B5,); runOnlyForDeploymentPostprocessing = 0; };
+41D311A605520FC7B8B9A980 = { isa = PBXResourcesBuildPhase; buildActionMask = 2147483647; files = (67634C1FA9B51AB8ED779A8B, 070048F437A415A8B24F192B, AFCFFF261453769F56AB7C4D,); runOnlyForDeploymentPostprocessing = 0; };
+E2AA269EB967A8853A258BFA = { isa = PBXFrameworksBuildPhase; buildActionMask = 2147483647; files = (); runOnlyForDeploymentPostprocessing = 0; };
+45666D976BAB316D970EC459 = { isa = PBXShellScriptBuildPhase; alwaysOutOfDate = 1; buildActionMask = 2147483647; files = (); inputPaths = (); name = "Prepare bundled UI"; outputPaths = ("$(SRCROOT)/ZZLedger/Web/index.html",); runOnlyForDeploymentPostprocessing = 0; shellPath = /bin/sh; shellScript = "/usr/bin/python3 \"$SRCROOT/scripts/prepare_assets.py\"\n"; };
+488864B3D19480A82F7F1786 = { isa = XCBuildConfiguration; name = Debug; buildSettings = { CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SWIFT_VERSION = 5.0; ENABLE_USER_SCRIPT_SANDBOXING = NO; SWIFT_OPTIMIZATION_LEVEL = "-Onone"; DEBUG_INFORMATION_FORMAT = dwarf; SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG; ONLY_ACTIVE_ARCH = YES; }; };
+952548237D7F645F11D1E7B6 = { isa = XCBuildConfiguration; name = Debug; buildSettings = {
+            PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.keriya.zzledger.ios;
+            INFOPLIST_FILE = ZZLedger/Info.plist; GENERATE_INFOPLIST_FILE = NO;
+            MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1;
+            CODE_SIGN_STYLE = Automatic; TARGETED_DEVICE_FAMILY = 1;
+            SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO;
+            ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+            LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+        }; };
+35B1014F135DE9B45529B733 = { isa = XCBuildConfiguration; name = Release; buildSettings = { CLANG_ENABLE_MODULES = YES; CLANG_ENABLE_OBJC_ARC = YES; SDKROOT = iphoneos; IPHONEOS_DEPLOYMENT_TARGET = 16.0; SWIFT_VERSION = 5.0; ENABLE_USER_SCRIPT_SANDBOXING = NO; SWIFT_OPTIMIZATION_LEVEL = "-O"; DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym"; SWIFT_COMPILATION_MODE = wholemodule; }; };
+E2D3A31BEAA1368FC62DA77A = { isa = XCBuildConfiguration; name = Release; buildSettings = {
+            PRODUCT_NAME = "$(TARGET_NAME)"; PRODUCT_BUNDLE_IDENTIFIER = com.keriya.zzledger.ios;
+            INFOPLIST_FILE = ZZLedger/Info.plist; GENERATE_INFOPLIST_FILE = NO;
+            MARKETING_VERSION = 0.1.0; CURRENT_PROJECT_VERSION = 1;
+            CODE_SIGN_STYLE = Automatic; TARGETED_DEVICE_FAMILY = 1;
+            SUPPORTED_PLATFORMS = "iphoneos iphonesimulator"; SUPPORTS_MACCATALYST = NO;
+            ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+            LD_RUNPATH_SEARCH_PATHS = "$(inherited) @executable_path/Frameworks";
+        }; };
+B4E10CAA9C5E22150B71559C = { isa = XCConfigurationList; buildConfigurations = (488864B3D19480A82F7F1786, 35B1014F135DE9B45529B733,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+4A807E8A027297B0B93701FB = { isa = XCConfigurationList; buildConfigurations = (952548237D7F645F11D1E7B6, E2D3A31BEAA1368FC62DA77A,); defaultConfigurationIsVisible = 0; defaultConfigurationName = Release; };
+34A04005BCAF206EEC990BD9 = { isa = PBXNativeTarget; name = ZZLedger; productName = ZZLedger;
+        productType = "com.apple.product-type.application"; productReference = A172CEDCAE47474B615C54D5;
+        buildConfigurationList = 4A807E8A027297B0B93701FB;
+        buildPhases = (45666D976BAB316D970EC459, 878A52FC5FF6A57D50B7B870, E2AA269EB967A8853A258BFA, 41D311A605520FC7B8B9A980,); buildRules = (); dependencies = (); };
+244210E48437B6556980A702 = { isa = PBXProject; attributes = { LastUpgradeCheck = 1600; TargetAttributes = { 34A04005BCAF206EEC990BD9 = { CreatedOnToolsVersion = 16.0; }; }; };
+        buildConfigurationList = B4E10CAA9C5E22150B71559C; compatibilityVersion = "Xcode 14.0";
+        developmentRegion = "zh-Hans"; knownRegions = ("zh-Hans", en, Base,);
+        mainGroup = 4813494D137E1631BBA301D5; productRefGroup = 0A3E27B8CA818264D75C8D81;
+        projectDirPath = ""; projectRoot = ""; targets = (34A04005BCAF206EEC990BD9,); };
+}; rootObject = 244210E48437B6556980A702; }

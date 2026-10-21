@@ -19,3 +19,11 @@ mobile/.gradle/
 mobile/local.properties
 *.keystore
 *.jks
+
+# iOS generated resources, build products and per-user Xcode settings
+ios/ZZLedger/Web/
+ios/.build/
+ios/build/
+ios/output/
+*.xcuserstate
+xcuserdata/

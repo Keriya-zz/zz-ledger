@@ -41,9 +41,8 @@ function categoryButtons() {
 new MutationObserver(()=> { if (mobile$('entry-dialog').open) categoryButtons(); }).observe(mobile$('entry-dialog'),{attributes:true,attributeFilter:['open']});
 category.addEventListener('change',categoryButtons);
 window.zzApp.ready.then(()=> {
-  mobile$('save-status').textContent='已保存到本机';
   document.querySelector('footer span').textContent='离线记账 · 数据保存在本机';
-});
+}).catch(()=>{});
 
 function updateMobileState() {
   document.body.classList.toggle('mobile-home',!mobile$('home-view').hidden);

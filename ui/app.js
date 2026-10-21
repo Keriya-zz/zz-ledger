@@ -308,16 +308,28 @@ $('export-btn').onclick = async () => {
   try { await download(JSON.stringify(state,null,2),`zz记-账本备份-${today}.json`,'application/json'); toast('备份已保存到软件文件夹中的「导出」目录'); }
   catch(error) { toast(error.message); }
 };
-$('import-btn').onclick = () => $('import-file').click();
+function previewImport(content) {
+  const next = Ledger.validate(JSON.parse(content));
+  confirmAction('导入账本',`将用备份中的 ${next.accounts.length} 个账户、${next.entries.length} 笔收支、${(next.transfers || []).length} 笔划转、${(next.debts || []).length} 笔待还款替换当前账本。请先导出当前账本以备恢复。`,async ()=> {
+    await commit(next, true); toast('账本已导入');
+  },'替换并导入');
+}
+function importError(error) {
+  toast(error instanceof SyntaxError ? '文件不是有效的 JSON 账本' : error.message);
+}
+$('import-btn').onclick = async () => {
+  if (!storage.import) { $('import-file').click(); return; }
+  try {
+    const content = await storage.import();
+    if (content !== null) previewImport(content);
+  } catch(error) { importError(error); }
+};
 $('import-file').onchange = async event => {
   const file = event.target.files[0]; if (!file) return;
   try {
     if (file.size > 10*1024*1024) throw new Error('备份文件过大，最大支持 10 MB');
-    const next = Ledger.validate(JSON.parse(await file.text()));
-    confirmAction('导入账本',`将用备份中的 ${next.accounts.length} 个账户、${next.entries.length} 笔收支、${(next.transfers || []).length} 笔划转、${(next.debts || []).length} 笔待还款替换当前账本。请先导出当前账本以备恢复。`,async ()=> {
-      await commit(next, true); toast('账本已导入');
-    },'替换并导入');
-  } catch(error) { toast(error instanceof SyntaxError ? '文件不是有效的 JSON 账本' : error.message); }
+    previewImport(await file.text());
+  } catch(error) { importError(error); }
   event.target.value = '';
 };
 $('csv-btn').onclick = async () => {

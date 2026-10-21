@@ -1,8 +1,8 @@
 from pathlib import Path
 import shutil
 ROOT=Path(__file__).resolve().parents[2]
-def prepare():
-    out=ROOT/'mobile/app/src/main/assets'
+def prepare(out=None):
+    out=Path(out) if out is not None else ROOT/'mobile/app/src/main/assets'
     shutil.copytree(ROOT/'ui',out,dirs_exist_ok=True)
     for name in ('native-api.js','mobile.css','mobile.js'): shutil.copy2(ROOT/'mobile/web'/name,out/name)
     html=(out/'index.html').read_text(encoding='utf-8')

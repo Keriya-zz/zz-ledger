@@ -14,16 +14,19 @@ from zzledger.server import make_server
 root = Path(__file__).resolve().parent.parent
 parser = argparse.ArgumentParser()
 parser.add_argument('--mobile', action='store_true')
+parser.add_argument('--ios', action='store_true', help='Exercise the iOS assets with a mocked WebKit bridge')
 parser.add_argument('--preview-view', choices=('home','accounts','debts','stats'), default='debts')
 parser.add_argument('--preview-dialog', choices=('repayment','entry','debt','account','account-history','transfer'), default=None)
 parser.add_argument('--preview-custom-category', action='store_true')
 parser.add_argument('--reference-a-fixture', action='store_true', help='Only change isolated preview data to the six-account concept A example')
 args = parser.parse_args()
+if args.ios:
+    args.mobile = True
 if not os.environ.get("CHROME_BIN"):
     raise SystemExit("请将 CHROME_BIN 环境变量设为本机 Chrome 可执行文件的路径。")
 assets = root / '.qa/design-assets'
 if args.mobile:
-    sys.path.insert(0,str(root/'mobile/scripts'))
+    sys.path.insert(0,str(root/('ios/scripts' if args.ios else 'mobile/scripts')))
     from prepare_assets import prepare
     shutil.copytree(prepare(),assets,dirs_exist_ok=True)
     page=assets/'index.html'
@@ -31,9 +34,13 @@ if args.mobile:
     text=page.read_text(encoding='utf-8')
     text=re.sub(r'<meta http-equiv="Content-Security-Policy"[^>]+>', '', text)
     mock='''<script>window.ZZNative={request:async(id,action,payload)=>{try{const args=JSON.parse(payload); const response=await fetch('/api/'+(action==='export'?'export':'ledger'),{method:action==='read'?'GET':'POST',headers:{'X-ZZ-Token':window.desktopConfig.token,'Content-Type':'application/json'},body:action==='read'?undefined:JSON.stringify(action==='export'?{content:args.content,filename:args.filename}:{value:args.value})}); const result=await response.json();window.zzNativeReply(id,response.ok?{value:result.value}:{error:result.error});}catch(e){window.zzNativeReply(id,{error:e.message});}}};</script>'''
+    if args.ios:
+        mock='''<script>window.webkit={messageHandlers:{zzLedger:{postMessage:async args=>{if(args.action==='import')return window.qaImportContent ?? null;const response=await fetch('/api/'+(args.action==='export'?'export':'ledger'),{method:args.action==='read'?'GET':'POST',headers:{'X-ZZ-Token':window.desktopConfig.token,'Content-Type':'application/json'},body:args.action==='read'?undefined:JSON.stringify(args.action==='export'?{content:args.content,filename:args.filename}:{value:args.value})});const result=await response.json();if(!response.ok)throw new Error(result.error);return result.value ?? null;}}}};</script>'''
     text=text.replace('<script src="native-api.js">',mock+'<script src="native-api.js">')
     page.write_text(text,encoding='utf-8')
     api=assets/'native-api.js';api.write_text(api.read_text(encoding='utf-8-sig').replace("window.desktopConfig = {platform:'android',directory:'App 私有存储'};","window.desktopConfig = {...window.desktopConfig,platform:'android',directory:'App 私有存储'};"),encoding='utf-8')
+    if args.ios:
+        api.write_text(api.read_text(encoding='utf-8').replace("window.desktopConfig = {platform: 'ios', directory: 'iPhone 本机存储'};", "window.desktopConfig = {...window.desktopConfig, platform: 'ios', directory: 'iPhone 本机存储'};"),encoding='utf-8')
 else:
     shutil.copytree(root/'ui', assets, dirs_exist_ok=True)
 store = LedgerStore(root/'.qa/design-data')
@@ -73,6 +80,24 @@ window.zzApp.ready.then(async () => {
     await submit('account-form'); check(snapshot().accounts.length === 4,'账户添加');
     const cash=snapshot().accounts[3].id;
     const beforeImport=JSON.stringify(snapshot());
+    if (window.desktopConfig.platform==='ios') {
+      window.qaImportContent=null;
+      await $('import-btn').onclick();
+      check(!$('confirm-dialog').open && JSON.stringify(snapshot())===beforeImport,'iOS 取消选择不改变账本');
+      window.qaImportContent='{bad';
+      await $('import-btn').onclick();
+      check(!$('confirm-dialog').open && $('toast').textContent.includes('JSON'),'iOS 原生导入拒绝损坏 JSON');
+      window.qaImportContent=JSON.stringify({...snapshot(),entries:[{id:'broken'}]});
+      await $('import-btn').onclick();
+      check(!$('confirm-dialog').open && JSON.stringify(snapshot())===beforeImport,'iOS 原生导入校验领域数据');
+      window.qaImportContent=beforeImport;
+      await $('import-btn').onclick();
+      check($('confirm-dialog').open,'iOS 原生导入要求确认');
+      $('confirm-dialog').querySelector('[data-close]').click();
+      check(JSON.stringify(snapshot())===beforeImport,'iOS 取消确认保持原账本');
+      await $('import-btn').onclick(); await $('confirm-action').onclick();
+      check(JSON.stringify(snapshot())===beforeImport,'iOS 原生导入成功');
+    }
     await $('import-file').onchange({target:{files:[new File(['{bad'], 'bad.json')],value:'bad'}});
     check(JSON.stringify(snapshot())===beforeImport && !$('confirm-dialog').open,'无效导入不改变账本');
     await $('import-file').onchange({target:{files:[new File([beforeImport], 'backup.json')],value:'backup'}});
@@ -242,7 +267,8 @@ p=assets/'index.html';p.write_text(p.read_text(encoding='utf-8').replace('</body
 server,url,_=make_server(assets,store)
 thread=threading.Thread(target=server.serve_forever,daemon=True);thread.start()
 try:
-    for width,height,label in (((390,844,'mobile-desktop'),(360,800,'mobile-compact')) if args.mobile else ((1440,1100,'design-desktop'),(900,900,'design-compact'))):
+    sizes = ((375,667,'ios-compact'),(393,852,'ios-iphone'),(852,393,'ios-landscape')) if args.ios else (((390,844,'mobile-desktop'),(360,800,'mobile-compact')) if args.mobile else ((1440,1100,'design-desktop'),(900,900,'design-compact')))
+    for width,height,label in sizes:
         store.write(json.dumps(data,ensure_ascii=False))
         command=[os.environ['CHROME_BIN'],'--headless','--disable-gpu','--no-first-run','--no-default-browser-check',f'--user-data-dir={root / ".qa" / (label+"-profile")}',f'--window-size={width},{height}','--virtual-time-budget=6000',f'--screenshot={root / ".qa" / (label+".png")}', '--dump-dom',url]
         if args.mobile:
